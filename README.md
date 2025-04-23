@@ -6,10 +6,10 @@ This full-stack web application enables users to register, log in, take online e
 
 ## Features
   # Registration Module: 
-    - Collects user details: Full Name, Email Address, Phone Number, College Name, College ID Number, Profile Picture (50KB - 250KB), College ID Card (100KB - 500KB).
-    - Generates a random password upon successful registration. 
-    - Sends the password to the user's registered email address.
-    - Redirects the user to the Login Page.
+    1.Collects user details: Full Name, Email Address, Phone Number, College Name, College ID Number, Profile Picture (50KB - 250KB), College ID Card (100KB - 500KB).
+    2.Generates a random password upon successful registration. 
+    3.Sends the password to the user's registered email address.
+    4.Redirects the user to the Login Page.
  # Login Module:
     - Allows users to log in using their email and password. 
     - Redirects users to the Dashboard after successful login. 
