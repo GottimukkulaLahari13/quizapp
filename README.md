@@ -55,7 +55,7 @@ This full-stack web application enables users to register, log in, take online e
 3.  Set up the MySQL database and update the connection details in the backend configuration.
 4.  Install the frontend dependencies: `cd client` and then `npm install`.
 5.  Run the backend server: `npm start`. 
-6.  Run the frontend development server: `npm start`.
+6.  Run the frontend development server: `npm start` or `npm run dev`.  
 
 ## Usage
 1.  Register a new user account.
