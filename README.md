@@ -10,17 +10,17 @@ This full-stack web application enables users to register, log in, take online e
     - Generates a random password upon successful registration. 
     - Sends the password to the user's registered email address.
     - Redirects the user to the Login Page.
- # Login Module:
+## Login Module:
     - Allows users to log in using their email and password. 
     - Redirects users to the Dashboard after successful login. 
- # User Dashboard:
+## User Dashboard:
     - Left Panel:
         - My Courses
         - Results 
     - Top-Right Profile Section:
         - Displays user's uploaded profile picture. 
         - On hover, shows a dropdown menu with: My Profile, Change Password, Logout. 
- # Test Interface:
+## Test Interface:
     - Displays a list of tests for a selected course when "My Courses" is clicked. 
     - Allows users to start tests.
     - Follows the GATE mock test interface for:
@@ -30,11 +30,11 @@ This full-stack web application enables users to register, log in, take online e
     - Each test contains:
         - 2 sections 
         - MCQ and NAT question types 
- # Post-Exam Report:
+## Post-Exam Report:
     - Displays on the Results Page:
         - Performance Summary: Score, Percentage, Rank. 
         - Detailed Solutions Section: All questions, Correct answer, User's selected option.
- # Email Notification:
+## Email Notification:
     - Sends an automatic email to the user after test submission.
     - Email Template:
         Dear [User Name],
