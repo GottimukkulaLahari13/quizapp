@@ -36,13 +36,6 @@ This full-stack web application enables users to register, log in, take online e
     - Detailed Solutions Section: All questions, Correct answer, User's selected option.
 ## Email Notification:
 - Sends an automatic email to the user after test submission.
-- Email Template:
-        Dear [User Name],
-        Your test has been successfully submitted.
-        Course Name: GATE
-        Test Name: Test - 1
-        Best Regards,
-        nDMatrix 2025
     
 ## Tech Stack
 - Frontend: React.js, HTML, CSS, JavaScript 
