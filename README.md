@@ -55,4 +55,3 @@ This full-stack web application enables users to register, log in, take online e
 2.  Log in with your credentials.
 3.  Navigate to "My Courses" to view available tests.
 4.  Take the tests and view your results.
-
