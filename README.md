@@ -32,32 +32,31 @@ This full-stack web application enables users to register, log in, take online e
 - Right-side question number ledger (same colors, shapes, fonts)
 - Numpad for NAT questions
 - Each test contains:
-     2 sections
-     MCQ and NAT question types
-  
-## Post-Exam Report:
-Displays on the Results Page:
-Performance Summary: Score, Percentage, Rank.
-Detailed Solutions Section: All questions, Correct answer, User's selected option.
+     - 2 sections
+     - MCQ and NAT question types
+- Post-Exam Report:
+     - Displays on the Results Page:
+        - Performance Summary: Score, Percentage, Rank.
+        - Detailed Solutions Section: All questions, Correct answer, User's selected option.
 
 ## Email Notification:
 Sends an automatic email to the user after test submission.
 
 ## Tech Stack:
-Frontend: React.js, HTML, CSS, JavaScript
-Backend: Node.js
-Database: MySQL
+- Frontend: React.js, HTML, CSS, JavaScript
+- Backend: Node.js
+- Database: MySQL
 
 ## Installation
-1.Clone the repository.
-2.Install the backend dependencies: `npm install`.
-3.Set up the MySQL database and update the connection details in the backend configuration.
-4.Install the frontend dependencies: `cd client` and then `npm install`.
-5.Run the backend server: `npm start`.
-6.Run the frontend development server: `npm start` or `npm run dev`.
+- Clone the repository.
+- Install the backend dependencies: `npm install`.
+- Set up the MySQL database and update the connection details in the backend configuration.
+- Install the frontend dependencies: `cd client` and then `npm install`.
+- Run the backend server: `npm start`.
+- Run the frontend development server: `npm start` or `npm run dev`.
 
 ## Usage
-1.Register a new user account.
-2.Log in with your credentials.
-3.Navigate to "My Courses" to view available tests.
-4.Take the tests and view your results.
+- Register a new user account.
+- Log in with your credentials.
+- Navigate to "My Courses" to view available tests.
+- Take the tests and view your results.
