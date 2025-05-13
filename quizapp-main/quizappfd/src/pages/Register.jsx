@@ -1,5 +1,6 @@
-import React, { useState } from "react"; 
-import { useNavigate } from "react-router-dom"; 
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import axios from "axios";
 
 const Register = () => {
   const [formData, setFormData] = useState({
@@ -13,81 +14,122 @@ const Register = () => {
   });
 
   const [message, setMessage] = useState("");
-  const navigate = useNavigate();  
-
-  const generatePassword = () => {
-    const chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()";
-    let password = "";
-    for (let i = 0; i < 8; i++) {
-      password += chars.charAt(Math.floor(Math.random() * chars.length));
-    }
-    return password;
-  };
+  const navigate = useNavigate();
 
   const handleChange = (e) => {
     const { name, value, files } = e.target;
     if (files) {
-      setFormData({ ...formData, [name]: files[0] });
+      setFormData((prevData) => ({ ...prevData, [name]: files[0] }));
     } else {
-      setFormData({ ...formData, [name]: value });
+      setFormData((prevData) => ({ ...prevData, [name]: value }));
     }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const randomPassword = generatePassword();
+
+    const formdata = new FormData();
+    formdata.append("fullName", formData.fullName);
+    formdata.append("email", formData.emailAddress); // match backend field
+    formdata.append("phone", formData.phone);
+    formdata.append("collegeName", formData.collegeName);
+    formdata.append("collegeID", formData.collegeId); // match backend field
+    formdata.append("profilePic", formData.profilePic);
+    formdata.append("idCard", formData.collegeIdCard); // match backend field
 
     try {
-      // Now actually send email using PHP backend
-      const response = await fetch('http://localhost/examportal/register.php', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          emailAddress: formData.emailAddress,
-          password: randomPassword,
-        }),
-      });
+      const res = await axios.post(
+        "http://localhost:5000/api/auth/register",
+        formdata, config,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        }
+      );
+      setMessage(res.data.message || "Registered successfully!");
 
-      const result = await response.json();
-      console.log(result.message);
-
-      setMessage("User registered successfully! Check your email for password.");
-
+      // Redirect after short delay
       setTimeout(() => {
         navigate("/login");
-      }, 3000);
-    } catch (error) {
-      console.error("Error:", error);
-      setMessage("Registration failed. Please try again.");
+      }, 2000);
+    } catch (err) {
+      console.error(err);
+      setMessage(err.response?.data?.error || "Registration failed.");
     }
   };
 
   return (
     <div className="auth-container">
-      <form className="auth-form" onSubmit={handleSubmit}>
-        <h2>Student Registration</h2>
-
-        <input type="text" name="fullName" placeholder="Full Name" value={formData.fullName} onChange={handleChange} required />
-        <input type="email" name="emailAddress" placeholder="Email Address" value={formData.emailAddress} onChange={handleChange} required />
-        <input type="tel" name="phone" placeholder="Phone Number" value={formData.phone} onChange={handleChange} required />
-        <input type="text" name="collegeName" placeholder="College Name" value={formData.collegeName} onChange={handleChange} required />
-        <input type="text" name="collegeId" placeholder="College ID Number" value={formData.collegeId} onChange={handleChange} required />
-        
+      <form className="auth-form" onSubmit={handleSubmit} encType="multipart/form-data">
+        <h2>Registration Form</h2>
+        <input
+          type="text"
+          name="fullName"
+          placeholder="Full Name"
+          value={formData.fullName}
+          onChange={handleChange}
+          required
+        />
+        <input
+          type="email"
+          name="emailAddress"
+          placeholder="Email Address"
+          value={formData.emailAddress}
+          onChange={handleChange}
+          required
+        />
+        <input
+          type="tel"
+          name="phone"
+          placeholder="Phone Number"
+          value={formData.phone}
+          onChange={handleChange}
+          required
+        />
+        <input
+          type="text"
+          name="collegeName"
+          placeholder="College Name"
+          value={formData.collegeName}
+          onChange={handleChange}
+          required
+        />
+        <input
+          type="text"
+          name="collegeId"
+          placeholder="College ID Number"
+          value={formData.collegeId}
+          onChange={handleChange}
+          required
+        />
         <label>Upload Profile Picture (50KB - 250KB)</label>
-        <input type="file" name="profilePic" accept="image/*" onChange={handleChange} required />
-        
+        <input
+          type="file"
+          name="profilePic"
+          accept="image/*"
+          onChange={handleChange}
+          required
+        />
         <label>Upload College ID Card (100KB - 500KB)</label>
-        <input type="file" name="collegeIdCard" accept="image/*" onChange={handleChange} required />
+        <input
+          type="file"
+          name="collegeIdCard"
+          accept="image/*"
+          onChange={handleChange}
+          required
+        />
 
         <button type="submit" className="auth-button">Register</button>
 
-        {message && <p style={{ color: 'lightgreen', marginTop: '10px' }}>{message}</p>}
-        
-        <p style={{ marginTop: '20px', textAlign: 'center' }}>
-          Already have an account? 
-          <span onClick={() => navigate('/login')} style={{ color: 'blue', cursor: 'pointer' }}>
+        {message && <p style={{ color: "lightgreen", marginTop: "10px" }}>{message}</p>}
+
+        <p style={{ marginTop: "20px", textAlign: "center" }}>
+          Already have an account?{" "}
+          <span
+            onClick={() => navigate("/login")}
+            style={{ color: "blue", cursor: "pointer" }}
+          >
             Login here
           </span>
         </p>
@@ -96,4 +138,4 @@ const Register = () => {
   );
 };
 
-export default Register;
+export default Register;  
