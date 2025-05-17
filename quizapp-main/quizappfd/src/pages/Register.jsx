@@ -1,20 +1,18 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
 import axios from "axios";
 
 const Register = () => {
   const [formData, setFormData] = useState({
     fullName: "",
-    emailAddress: "",
+    email: "",
     phone: "",
     collegeName: "",
-    collegeId: "",
+    collegeID: "",
     profilePic: null,
-    collegeIdCard: null,
+    idCard: null,
   });
 
   const [message, setMessage] = useState("");
-  const navigate = useNavigate();
 
   const handleChange = (e) => {
     const { name, value, files } = e.target;
@@ -28,33 +26,40 @@ const Register = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    const formdata = new FormData();
-    formdata.append("fullName", formData.fullName);
-    formdata.append("email", formData.emailAddress); // match backend field
-    formdata.append("phone", formData.phone);
-    formdata.append("collegeName", formData.collegeName);
-    formdata.append("collegeID", formData.collegeId); // match backend field
-    formdata.append("profilePic", formData.profilePic);
-    formdata.append("idCard", formData.collegeIdCard); // match backend field
+    if (!formData.profilePic || !formData.idCard) {
+      setMessage("Please upload both profile picture and college ID card.");
+      return;
+    }
+
+    if (formData.profilePic.size < 51200 || formData.profilePic.size > 256000) {
+      setMessage("Profile Picture must be between 50KB and 250KB.");
+      return;
+    }
+
+    if (formData.idCard.size < 102400 || formData.idCard.size > 512000) {
+      setMessage("College ID Card must be between 100KB and 500KB.");
+      return;
+    }
+
+    const payload = new FormData();
+    payload.append("fullName", formData.fullName);
+    payload.append("email", formData.email);
+    payload.append("phone", formData.phone);
+    payload.append("collegeName", formData.collegeName);
+    payload.append("collegeID", formData.collegeID);
+    payload.append("profilePic", formData.profilePic);
+    payload.append("idCard", formData.idCard);
 
     try {
-      const res = await axios.post(
-        "http://localhost:5000/api/auth/register",
-        formdata, config,
-        {
-          headers: {
-            "Content-Type": "multipart/form-data",
-          },
-        }
-      );
-      setMessage(res.data.message || "Registered successfully!");
+      const response = await axios.post("http://localhost:5000/api/auth/register", payload, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
 
-      // Redirect after short delay
-      setTimeout(() => {
-        navigate("/login");
-      }, 2000);
+      setMessage(response.data.message || "Registration successful! Check your email.");
     } catch (err) {
-      console.error(err);
+      console.error("Axios Error:", err);
       setMessage(err.response?.data?.error || "Registration failed.");
     }
   };
@@ -63,6 +68,7 @@ const Register = () => {
     <div className="auth-container">
       <form className="auth-form" onSubmit={handleSubmit} encType="multipart/form-data">
         <h2>Registration Form</h2>
+
         <input
           type="text"
           name="fullName"
@@ -71,14 +77,16 @@ const Register = () => {
           onChange={handleChange}
           required
         />
+
         <input
           type="email"
-          name="emailAddress"
+          name="email"
           placeholder="Email Address"
-          value={formData.emailAddress}
+          value={formData.email}
           onChange={handleChange}
           required
         />
+
         <input
           type="tel"
           name="phone"
@@ -87,6 +95,7 @@ const Register = () => {
           onChange={handleChange}
           required
         />
+
         <input
           type="text"
           name="collegeName"
@@ -95,39 +104,42 @@ const Register = () => {
           onChange={handleChange}
           required
         />
+
         <input
           type="text"
-          name="collegeId"
+          name="collegeID"
           placeholder="College ID Number"
-          value={formData.collegeId}
+          value={formData.collegeID}
           onChange={handleChange}
           required
         />
+
         <label>Upload Profile Picture (50KB - 250KB)</label>
         <input
           type="file"
           name="profilePic"
-          accept="image/*"
+          accept="image/jpeg, image/png"
           onChange={handleChange}
           required
         />
+
         <label>Upload College ID Card (100KB - 500KB)</label>
         <input
           type="file"
-          name="collegeIdCard"
-          accept="image/*"
+          name="idCard"
+          accept="image/jpeg, image/png"
           onChange={handleChange}
           required
         />
 
         <button type="submit" className="auth-button">Register</button>
 
-        {message && <p style={{ color: "lightgreen", marginTop: "10px" }}>{message}</p>}
+        {message && <p style={{ color: "green", marginTop: "10px" }}>{message}</p>}
 
         <p style={{ marginTop: "20px", textAlign: "center" }}>
           Already have an account?{" "}
           <span
-            onClick={() => navigate("/login")}
+            onClick={() => window.location.href = "/login"}
             style={{ color: "blue", cursor: "pointer" }}
           >
             Login here
@@ -138,4 +150,4 @@ const Register = () => {
   );
 };
 
-export default Register;  
+export default Register;

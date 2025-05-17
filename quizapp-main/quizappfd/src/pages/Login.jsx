@@ -1,5 +1,5 @@
-import React, { useState } from "react"; 
-import { Link, useNavigate } from "react-router-dom";
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import "./Auth.css";
 
 const Login = () => {
@@ -10,12 +10,16 @@ const Login = () => {
   const handleLogin = (e) => {
     e.preventDefault();
 
-    // Normally you check email/password with backend here
-    if (email && password) {
-      // Successful login
+    // Replace this with real backend auth later
+    const demoEmail = "demo@example.com";
+    const demoPassword = "Demo@123";
+    const demoProfile = "/uploads/profile.jpg"; // should exist in public/uploads
+
+    if (email === demoEmail && password === demoPassword) {
+      localStorage.setItem("user", JSON.stringify({ email, profile: demoProfile }));
       navigate("/dashboard");
     } else {
-      alert("Please enter email and password");
+      alert("Invalid email or password.");
     }
   };
 
@@ -41,15 +45,14 @@ const Login = () => {
 
         <div className="auth-extra">
           <span className="remember-checkbox">
-            <input type="checkbox" />
-            Remember Me
+            <input type="checkbox" /> Remember Me
           </span>
           <a href="#" className="forgot-password">Forgot Password?</a>
         </div>
 
         <button className="auth-button" type="submit">Login</button>
         <p>
-          Don't have an account? <Link to="/register">Register here</Link>
+          Don't have an account? <a href="/register">Register here</a>
         </p>
       </form>
     </div>

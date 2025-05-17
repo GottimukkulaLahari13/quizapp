@@ -1,13 +1,11 @@
 const mysql = require('mysql');
 require('dotenv').config();
 
-console.log('[DB] Starting database connection setup...');
-
 const connection = mysql.createConnection({
-  host: 'localhost',
-  user: 'root',
-  password: '', // or your actual MySQL password
-  database: 'quizapp' // replace with your DB name
+  host: process.env.DB_HOST,
+  user: process.env.DB_USER,
+  password: process.env.DB_PASSWORD || '',
+  database: process.env.DB_NAME,
 });
 
 connection.connect((err) => {
