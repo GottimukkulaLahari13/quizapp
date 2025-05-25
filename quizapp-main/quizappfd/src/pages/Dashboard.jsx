@@ -6,6 +6,7 @@ const Dashboard = () => {
   const [showDropdown, setShowDropdown] = useState(false);
   const [activeTab, setActiveTab] = useState("home");
   const [tests, setTests] = useState([]);
+  const [results, setResults] = useState([]);
   const navigate = useNavigate();
 
   const user = JSON.parse(localStorage.getItem("user"));
@@ -31,6 +32,10 @@ const Dashboard = () => {
           type: "GATE Exam Mock Test"
         }
       ]);
+    }
+    if (tab === "results") {
+      const storedResults = JSON.parse(localStorage.getItem("results")) || [];
+      setResults(storedResults);
     }
   };
 
@@ -98,9 +103,39 @@ const Dashboard = () => {
             ))}
           </div>
         )}
+
+        {activeTab === "results" && (
+          <div style={{ padding: 40 }}>
+            <h2>Test Results</h2>
+            {results.length > 0 ? (
+              <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                <thead>
+                  <tr>
+                    <th style={{ border: "1px solid #ccc", padding: "8px" }}>Question</th>
+                    <th style={{ border: "1px solid #ccc", padding: "8px" }}>Your Answer</th>
+                    <th style={{ border: "1px solid #ccc", padding: "8px" }}>Correct Answer</th>
+                    <th style={{ border: "1px solid #ccc", padding: "8px" }}>Solution</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {results.map((result, idx) => (
+                    <tr key={idx}>
+                      <td style={{ border: "1px solid #ccc", padding: "8px" }}>{result.question}</td>
+                      <td style={{ border: "1px solid #ccc", padding: "8px" }}>{result.userAnswer}</td>
+                      <td style={{ border: "1px solid #ccc", padding: "8px" }}>{result.correctAnswer}</td>
+                      <td style={{ border: "1px solid #ccc", padding: "8px" }}>{result.solution}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            ) : (
+              <p>No results available yet.</p>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
 };
 
-export default Dashboard
+export default Dashboard;

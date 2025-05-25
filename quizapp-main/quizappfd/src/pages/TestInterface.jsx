@@ -1,245 +1,263 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 
-const mockTest = {
-  title: "GATE 2025 Mock Test",
-  sections: [
+const questionsData = {
+  mcq: [
     {
-      name: "Section 1 - MCQ",
+      id: 1,
       type: "MCQ",
-      questions: [
-        { id: 1, question: "Capital of India?", options: ["Mumbai", "Delhi", "Kolkata", "Chennai"], answer: 1 },
-        { id: 2, question: "Largest planet?", options: ["Earth", "Mars", "Jupiter", "Venus"], answer: 2 },
-        { id: 3, question: "HTML stands for?", options: ["Hyper Transfer", "HyperText Markup Language", "HighText", "None"], answer: 1 },
-        { id: 4, question: "CSS used for?", options: ["Styling", "Structure", "Logic", "Database"], answer: 0 },
-        { id: 5, question: "React is?", options: ["Framework", "Library", "Language", "IDE"], answer: 1 }
-      ]
+      question: "What does CPU stand for?",
+      options: ["Central Process Unit", "Central Processing Unit", "Computer Personal Unit", "Central Processor Unit"],
+      answer: 1,
+      solution: "CPU stands for Central Processing Unit."
     },
     {
-      name: "Section 2 - NAT",
+      id: 2,
+      type: "MCQ",
+      question: "Which of these is not an operating system?",
+      options: ["Linux", "Windows", "Oracle", "MacOS"],
+      answer: 2,
+      solution: "Oracle is a database software, not an operating system."
+    }
+  ],
+  nat: [
+    {
+      id: 3,
       type: "NAT",
-      questions: [
-        { id: 6, question: "Square root of 81?", answer: "9" },
-        { id: 7, question: "5 * 6?", answer: "30" },
-        { id: 8, question: "Value of π (2 decimals)?", answer: "3.14" },
-        { id: 9, question: "Speed of light (in 10^8 m/s)?", answer: "3" },
-        { id: 10, question: "100 / 4?", answer: "25" }
-      ]
+      question: "What is the result of 2 + 2 * 2?",
+      answer: "6",
+      solution: "2 + 2 * 2 = 2 + 4 = 6"
+    },
+    {
+      id: 4,
+      type: "NAT",
+      question: "Enter the decimal equivalent of binary 1010:",
+      answer: "10",
+      solution: "1010 in binary is 10 in decimal."
     }
   ]
 };
 
 const TestInterface = () => {
-  const { testId } = useParams();
-  const [sectionIndex, setSectionIndex] = useState(0);
-  const [questionIndex, setQuestionIndex] = useState(0);
+  const [section, setSection] = useState("mcq");
+  const [currentIndex, setCurrentIndex] = useState(0);
   const [answers, setAnswers] = useState({});
-  const [reviewMarked, setReviewMarked] = useState({});
+  const [review, setReview] = useState({});
+  const [showResult, setShowResult] = useState(false);
+  const [timer, setTimer] = useState(180 * 60);
+  const [submitted, setSubmitted] = useState(false);
+  const { testId } = useParams();
 
-  const section = mockTest.sections[sectionIndex];
-  const question = section.questions[questionIndex];
+  const questions = questionsData[section];
 
-  const handleAnswerChange = (val) => {
-    setAnswers({ ...answers, [question.id]: val });
+  useEffect(() => {
+    // Fullscreen mode on load
+    const enterFullscreen = () => {
+      const el = document.documentElement;
+      if (el.requestFullscreen) el.requestFullscreen();
+      else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
+      else if (el.mozRequestFullScreen) el.mozRequestFullScreen();
+      else if (el.msRequestFullscreen) el.msRequestFullscreen();
+    };
+    enterFullscreen();
+
+    const interval = setInterval(() => {
+      setTimer((prev) => {
+        if (prev <= 1) {
+          clearInterval(interval);
+          handleSubmit();
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const formatTime = (sec) => {
+    const m = Math.floor(sec / 60);
+    const s = sec % 60;
+    return `${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
+  };
+
+  const handleOptionSelect = (value) => {
+    setAnswers({ ...answers, [questions[currentIndex].id]: value });
+  };
+
+  const handleInputChange = (e) => {
+    setAnswers({ ...answers, [questions[currentIndex].id]: e.target.value });
+  };
+
+  const handleReview = () => {
+    setReview({ ...review, [questions[currentIndex].id]: true });
+    handleNext();
+  };
+
+  const handleNext = () => {
+    if (currentIndex < questions.length - 1) setCurrentIndex(currentIndex + 1);
+  };
+
+  const handlePrevious = () => {
+    if (currentIndex > 0) setCurrentIndex(currentIndex - 1);
   };
 
   const handleSubmit = () => {
-    alert("Test submitted successfully!");
+    setSubmitted(true);
+    setShowResult(true);
   };
 
-  const toggleReviewMark = () => {
-    setReviewMarked(prev => ({
-      ...prev,
-      [question.id]: !prev[question.id]
-    }));
+  const getStatusColor = (id) => {
+    if (!answers[id] && !review[id]) return "gray";
+    if (!answers[id] && review[id]) return "orange";
+    if (answers[id] && !review[id]) return "green";
+    if (answers[id] && review[id]) return "blue";
+    return "red";
   };
 
-  const getQuestionStatusColor = (qId) => {
-    if (reviewMarked[qId]) return "#9c27b0"; // Purple for review
-    if (answers[qId] !== undefined && answers[qId] !== "") return "#4caf50"; // Green for answered
-    return "#f44336"; // Red for unanswered
-  };
+  if (showResult) {
+    return (
+      <div style={{ padding: 20 }}>
+        <h2>Performance Report</h2>
+        <table border="1" cellPadding="10">
+          <thead>
+            <tr>
+              <th>Question</th>
+              <th>Your Answer</th>
+              <th>Correct Answer</th>
+              <th>Solution</th>
+            </tr>
+          </thead>
+          <tbody>
+            {[...questionsData.mcq, ...questionsData.nat].map((q) => (
+              <tr key={q.id}>
+                <td>{q.question}</td>
+                <td>{answers[q.id] || "Not Answered"}</td>
+                <td>{q.options ? q.options[q.answer] : q.answer}</td>
+                <td>{q.solution}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    );
+  }
 
   return (
-    <div style={{ display: "flex", height: "100vh", width: "100vw", overflow: "hidden" }}>
-      {/* Main Left Side */}
-      <div style={{ flex: 1, padding: 20, overflowY: "auto", backgroundColor: "#f5f5f5" }}>
-        <div style={{ maxWidth: 800, margin: "0 auto" }}>
-          {/* Section Buttons */}
-          <div style={{ marginBottom: 20 }}>
-            {mockTest.sections.map((sec, idx) => (
-              <button
-                key={idx}
-                onClick={() => {
-                  setSectionIndex(idx);
-                  setQuestionIndex(0);
-                }}
-                style={{
-                  marginRight: 10,
-                  padding: "8px 16px",
-                  backgroundColor: idx === sectionIndex ? "#1976d2" : "#ccc",
-                  color: "#fff",
-                  border: "none",
-                  borderRadius: 4,
-                  cursor: "pointer"
-                }}
-              >
-                {sec.name}
-              </button>
-            ))}
-          </div>
+    <div style={{ display: "flex", width: "100vw", height: "100vh", overflow: "hidden" }}>
+      {/* Left Side - Questions */}
+      <div style={{ flex: 1, padding: 20, position: "relative" }}>
+        <h2>GATE 2025 - Computer Science</h2>
+        <div style={{ marginBottom: 10 }}>
+          <button onClick={() => setSection("mcq")}>MCQ Section ({questionsData.mcq.length})</button>
+          <button onClick={() => setSection("nat")}>NAT Section ({questionsData.nat.length})</button>
+        </div>
 
-          {/* Question Box */}
-          <div style={{ backgroundColor: "#fff", padding: 20, borderRadius: 8, boxShadow: "0 0 10px rgba(0,0,0,0.1)" }}>
-            <h3>{mockTest.title}</h3>
-            <h4>{section.name}</h4>
-            <p style={{ fontSize: "18px", fontWeight: "500" }}>
-              <strong>Q{questionIndex + 1}:</strong> {question.question}
-            </p>
-
-            {/* Options */}
-            {section.type === "MCQ" ? (
-              question.options.map((opt, idx) => (
-                <div key={idx} style={{ marginBottom: 10 }}>
+        <div style={{ marginBottom: 100 }}>
+          <h4>Q{currentIndex + 1}: {questions[currentIndex].question}</h4>
+          {section === "mcq" ? (
+            <ul>
+              {questions[currentIndex].options.map((opt, i) => (
+                <li key={i}>
                   <label>
                     <input
                       type="radio"
-                      name={`q${question.id}`}
-                      checked={answers[question.id] === idx}
-                      onChange={() => handleAnswerChange(idx)}
-                      style={{ marginRight: 8 }}
-                    />
-                    {opt}
+                      name="option"
+                      value={i}
+                      checked={answers[questions[currentIndex].id] == i}
+                      onChange={() => handleOptionSelect(i)}
+                    /> {opt}
                   </label>
-                </div>
-              ))
-            ) : (
-              <div>
-                <input
-                  type="text"
-                  value={answers[question.id] || ""}
-                  onChange={(e) => handleAnswerChange(e.target.value)}
-                  style={{ padding: "8px", width: "200px", marginBottom: "10px" }}
-                />
-                <div>
-                  {[1, 2, 3, 4, 5, 6, 7, 8, 9, 0, ".", "C"].map((key) => (
-                    <button
-                      key={key}
-                      onClick={() => {
-                        if (key === "C") handleAnswerChange("");
-                        else handleAnswerChange((answers[question.id] || "") + key);
-                      }}
-                      style={{ width: 40, height: 40, margin: 5 }}
-                    >
-                      {key}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Mark for Review */}
-            <div style={{ marginTop: 15 }}>
-              <label>
-                <input
-                  type="checkbox"
-                  checked={reviewMarked[question.id] || false}
-                  onChange={toggleReviewMark}
-                  style={{ marginRight: 8 }}
-                />
-                Mark for Review
-              </label>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <div>
+              <input
+                type="text"
+                placeholder="Enter your answer"
+                value={answers[questions[currentIndex].id] || ""}
+                onChange={handleInputChange}
+              />
             </div>
+          )}
+        </div>
 
-            {/* Navigation Buttons */}
-            <div style={{ marginTop: 20 }}>
-              <button
-                onClick={() => setQuestionIndex(Math.max(questionIndex - 1, 0))}
-                disabled={questionIndex === 0}
-                style={{
-                  padding: "8px 16px",
-                  marginRight: 10,
-                  backgroundColor: "#ccc",
-                  border: "none",
-                  cursor: questionIndex === 0 ? "not-allowed" : "pointer"
-                }}
-              >
-                Previous
-              </button>
-              <button
-                onClick={() =>
-                  setQuestionIndex(Math.min(questionIndex + 1, section.questions.length - 1))
-                }
-                disabled={questionIndex === section.questions.length - 1}
-                style={{
-                  padding: "8px 16px",
-                  marginRight: 10,
-                  backgroundColor: "#ccc",
-                  border: "none",
-                  cursor:
-                    questionIndex === section.questions.length - 1 ? "not-allowed" : "pointer"
-                }}
-              >
-                Next
-              </button>
-              <button
-                onClick={handleSubmit}
-                style={{
-                  padding: "8px 16px",
-                  backgroundColor: "green",
-                  color: "#fff",
-                  border: "none",
-                  cursor: "pointer"
-                }}
-              >
-                Save & Submit
-              </button>
-            </div>
-          </div>
+        {/* Navigation Buttons Fixed to Bottom */}
+        <div style={{
+          position: "absolute",
+          bottom: 10,
+          left: 20,
+          right: 20,
+          display: "flex",
+          justifyContent: "space-between",
+          background: "#fff",
+          paddingTop: 10,
+          borderTop: "1px solid #ccc"
+        }}>
+          <button onClick={handlePrevious}>Previous</button>
+          <button onClick={handleNext}>Save & Next</button>
+          <button onClick={handleReview}>Mark for Review & Next</button>
+          <button onClick={handleSubmit}>Submit</button>
         </div>
       </div>
 
-      {/* Right Sidebar: Question Palette */}
-      <div
-        style={{
-          width: 200,
-          backgroundColor: "#e0e0e0",
-          padding: 10,
-          overflowY: "auto",
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center"
-        }}
-      >
-        <h4 style={{ marginBottom: 10 }}>Questions</h4>
-        {section.questions.map((q, i) => (
-          <button
-            key={q.id}
-            onClick={() => setQuestionIndex(i)}
-            style={{
-              margin: "5px 0",
-              backgroundColor: getQuestionStatusColor(q.id),
-              color: "#fff",
-              borderRadius: "50%",
-              width: 40,
-              height: 40,
-              border: "none",
-              fontWeight: "bold",
-              cursor: "pointer"
-            }}
-          >
-            {i + 1}
-          </button>
-        ))}
+      {/* Right Side - Profile and Palette */}
+      <div style={{ width: 300, padding: 20, backgroundColor: "#f0f0f0", position: "relative" }}>
+        <div style={{ float: "right" }}>
+          <strong>Time Left:</strong> {formatTime(timer)}
+        </div>
+        <div style={{ marginTop: 60 }}>
+          <h3>Profile</h3>
+          <img
+            src="/uploads/default.jpg"
+            alt="Profile"
+            style={{ width: 80, height: 80, borderRadius: "50%" }}
+          />
+          <h4>Question Palette</h4>
+          <div style={{ display: "flex", flexWrap: "wrap" }}>
+            {questions.map((q, i) => (
+              <div
+                key={q.id}
+                style={{
+                  width: 30,
+                  height: 30,
+                  borderRadius: 6,
+                  backgroundColor: getStatusColor(q.id),
+                  color: "#fff",
+                  margin: 5,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontSize: 14
+                }}
+              >
+                {i + 1}
+              </div>
+            ))}
+          </div>
 
-        <div style={{ marginTop: 20, fontSize: 12, textAlign: "left", width: "100%" }}>
-          <div><span style={{ display: "inline-block", width: 12, height: 12, backgroundColor: "#4caf50", marginRight: 5 }}></span> Answered</div>
-          <div><span style={{ display: "inline-block", width: 12, height: 12, backgroundColor: "#f44336", marginRight: 5 }}></span> Unanswered</div>
-          <div><span style={{ display: "inline-block", width: 12, height: 12, backgroundColor: "#9c27b0", marginRight: 5 }}></span> Review</div>
+          <div style={{ marginTop: 20 }}>
+            <h5>Status Indicators</h5>
+            <div style={{ display: "flex", flexDirection: "column" }}>
+              <span><div style={dot("gray")} /> Not Visited</span>
+              <span><div style={dot("red")} /> Not Answered</span>
+              <span><div style={dot("green")} /> Answered</span>
+              <span><div style={dot("orange")} /> Review Not Answered</span>
+              <span><div style={dot("blue")} /> Review Answered</span>
+            </div>
+          </div>
         </div>
       </div>
     </div>
   );
 };
+
+const dot = (color) => ({
+  width: 20,
+  height: 20,
+  backgroundColor: color,
+  display: "inline-block",
+  marginRight: 5
+});
 
 export default TestInterface;

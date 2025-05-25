@@ -33,16 +33,19 @@ const upload = multer({
   { name: 'idCard', maxCount: 1 },
 ]);
 
+// Registration Route
 router.post('/register', (req, res) => {
   upload(req, res, async (err) => {
-    if (err) return res.status(400).json({ error: err.message });
+    if (err) {
+      console.error('Upload error:', err);
+      return res.status(400).json({ error: err.message });
+    }
 
     try {
       const { fullName, email, phone, collegeName, collegeID } = req.body;
       const profilePic = req.files?.profilePic?.[0];
       const idCard = req.files?.idCard?.[0];
 
-      // Validate required files and size ranges
       if (!profilePic || profilePic.size < 51200 || profilePic.size > 256000) {
         return res.status(400).json({
           error: 'Profile Picture must be between 50KB and 250KB.',
@@ -63,11 +66,12 @@ router.post('/register', (req, res) => {
       });
 
       if (existingUser) {
+        console.log('Registration attempt with existing email:', email);
         return res.status(400).json({ error: 'User already exists.' });
       }
 
       // Generate random password & hash it
-      const randomPassword = crypto.randomBytes(4).toString('hex');
+      const randomPassword = crypto.randomBytes(4).toString('hex'); // 8 hex chars
       const hashedPassword = await bcrypt.hash(randomPassword, 10);
 
       // Insert user into DB
@@ -91,15 +95,16 @@ router.post('/register', (req, res) => {
         });
       });
 
+      // Send email with the password
       const transporter = nodemailer.createTransport({
-      host: "smtp.gmail.com",
-      port: 465,
-      secure: true, // use TLS
-      auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS,
-      },
-    });
+        host: "smtp.gmail.com",
+        port: 465,
+        secure: true,
+        auth: {
+          user: process.env.EMAIL_USER,
+          pass: process.env.EMAIL_PASS,
+        },
+      });
 
       const mailOptions = {
         from: process.env.EMAIL_USER,
@@ -116,6 +121,7 @@ router.post('/register', (req, res) => {
       };
 
       await transporter.sendMail(mailOptions);
+      console.log('Registration successful for:', email);
 
       return res.json({
         message: 'Registration successful. Check your email for password.',
@@ -125,6 +131,49 @@ router.post('/register', (req, res) => {
       return res.status(500).json({ error: 'Internal server error.' });
     }
   });
+});
+
+// Login Route
+router.post('/login', async (req, res) => {
+  const { email, password } = req.body;
+  console.log('Login attempt for:', email);
+
+  try {
+    const [user] = await new Promise((resolve, reject) => {
+      db.query('SELECT * FROM users WHERE email = ?', [email], (err, results) => {
+        if (err) {
+          console.error('DB error on login:', err);
+          reject(err);
+        } else resolve(results);
+      });
+    });
+
+    if (!user) {
+      console.log('User not found:', email);
+      return res.status(401).json({ error: 'Invalid email or password.' });
+    }
+
+    const isMatch = await bcrypt.compare(password, user.password);
+    console.log('Password match:', isMatch);
+
+    if (!isMatch) {
+      return res.status(401).json({ error: 'Invalid email or password.' });
+    }
+
+    console.log('Login successful for:', email);
+    res.json({
+      message: 'Login successful',
+      user: {
+        id: user.id,
+        email: user.email,
+        fullName: user.full_name,
+        profile: `/uploads/${user.profile_pic}`,
+      },
+    });
+  } catch (error) {
+    console.error('Login error:', error);
+    res.status(500).json({ error: 'Internal server error.' });
+  }
 });
 
 module.exports = router;
