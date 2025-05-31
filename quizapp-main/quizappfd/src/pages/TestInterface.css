@@ -1,0 +1,100 @@
+.test-interface {
+  display: flex;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.question-section {
+  flex: 1;
+  padding: 20px;
+  position: relative;
+}
+
+.section-buttons button {
+  margin-right: 10px;
+}
+
+.question-box {
+  margin-bottom: 100px;
+}
+
+.navigation-buttons {
+  position: absolute;
+  bottom: 10px;
+  left: 20px;
+  right: 20px;
+  display: flex;
+  justify-content: space-between;
+  border-top: 1px solid #ccc;
+  padding-top: 10px;
+  background: #fff;
+}
+
+.sidebar {
+  width: 300px;
+  padding: 20px;
+  background-color: #f0f0f0;
+}
+
+.profile-pic {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+}
+
+.palette {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.palette-box {
+  width: 30px;
+  height: 30px;
+  border-radius: 6px;
+  margin: 5px;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.palette-box.gray { background-color: gray; }
+.palette-box.red { background-color: red; }
+.palette-box.green { background-color: green; }
+.palette-box.orange { background-color: orange; }
+.palette-box.blue { background-color: blue; }
+
+.legend span {
+  display: flex;
+  align-items: center;
+  margin-top: 5px;
+}
+
+.dot {
+  width: 20px;
+  height: 20px;
+  margin-right: 5px;
+  display: inline-block;
+}
+
+.dot.gray { background-color: gray; }
+.dot.red { background-color: red; }
+.dot.green { background-color: green; }
+.dot.orange { background-color: orange; }
+.dot.blue { background-color: blue; }
+
+.result-container {
+  padding: 20px;
+}
+
+.result-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.result-table th,
+.result-table td {
+  border: 1px solid #ccc;
+  padding: 10px;
+}

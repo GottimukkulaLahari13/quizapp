@@ -1,10 +1,12 @@
+// backend/server.js
 const express = require("express");
 const cors = require("cors");
 const bodyParser = require("body-parser");
 require("dotenv").config();
-require("./db");
+require("./db"); // Ensure your database connection is established
 
 const authRoutes = require("./routes/auth");
+const testRoutes = require("./routes/test"); // <--- ADD THIS LINE
 
 const app = express();
 
@@ -14,6 +16,7 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use("/uploads", express.static("uploads")); // Serve uploads statically
 
 app.use("/api/auth", authRoutes);
+app.use("/api/test", testRoutes); 
 
 app.get("/api/test", (req, res) => {
   res.json({ message: "Backend working!" });
