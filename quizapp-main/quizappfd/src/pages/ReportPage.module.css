@@ -1,0 +1,345 @@
+/* src/pages/ReportPage.module.css */
+
+:root {
+    /* GATE-like color palette */
+    --gate-primary-blue: #235a81; /* Darker blue for headers/accents */
+    --gate-light-blue: #e0f2f7; /* Light blue for backgrounds */
+    --gate-text-dark: #333;
+    --gate-text-light: #fefefe;
+    --gate-border-light: #ddd;
+    --gate-success-green: #4CAF50; /* For correct answers */
+    --gate-error-red: #F44336; /* For incorrect answers */
+    --gate-warning-orange: #FF9800; /* For not attempted/marked for review */
+    --gate-neutral-grey: #666; /* For general text */
+    --gate-background-white: #ffffff;
+    --gate-hover-grey: #f0f0f0;
+}
+
+/* Base font for the report/solution pages only */
+.reportPageContainer {
+    font-family: 'Roboto', sans-serif; /* A common, clean font for academic platforms */
+    /* background-color: var(--gate-light-blue); We will set this on the .fullPageScrollContainer */
+    color: var(--gate-text-dark);
+}
+
+/* --- Global Layout & Container Styles (scoped to this component) --- */
+.fullPageScrollContainer {
+    max-height: calc(100vh - var(--header-height, 60px)); /* Adjust for header height */
+    overflow-y: auto;
+    width: 100%;
+    background-color: var(--gate-light-blue); /* Apply background here */
+    padding: 20px 0; /* Add some vertical padding */
+    box-sizing: border-box; /* Include padding in element's total width and height */
+}
+
+.reportContainer {
+    background-color: var(--gate-background-white);
+    margin: 20px auto;
+    padding: 30px;
+    border-radius: 8px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    max-width: 900px; /* Wider container for better readability of questions/solutions */
+    box-sizing: border-box;
+}
+
+.loading {
+    text-align: center;
+    font-size: 1.2rem;
+    color: var(--gate-neutral-grey);
+    padding: 50px;
+}
+
+/* --- Headings --- */
+.mainHeading { /* Equivalent to h2 */
+    color: var(--gate-primary-blue);
+    text-align: center;
+    margin-bottom: 25px;
+    font-size: 2rem;
+    border-bottom: 2px solid var(--gate-border-light);
+    padding-bottom: 15px;
+}
+
+.subHeading { /* Equivalent to h3 */
+    color: var(--gate-primary-blue);
+    margin-bottom: 20px;
+    font-size: 1.6rem;
+    text-align: center;
+}
+
+.questionHeading { /* Equivalent to h4 */
+    color: var(--gate-text-dark);
+    margin-top: 25px;
+    margin-bottom: 10px;
+    font-size: 1.25rem;
+    padding-bottom: 5px;
+    border-bottom: 1px dashed var(--gate-border-light);
+}
+
+.solutionHeading { /* Equivalent to h5 */
+    color: var(--gate-primary-blue);
+    margin-top: 20px;
+    margin-bottom: 8px;
+    font-size: 1.1rem;
+}
+
+/* --- Performance Summary Table --- */
+.performanceReport {
+    margin-top: 30px;
+    padding: 20px;
+    border: 1px solid var(--gate-border-light);
+    border-radius: 6px;
+    background-color: #fcfcfc;
+}
+
+.performanceTable {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+    font-size: 1.1rem;
+}
+
+.performanceTable th,
+.performanceTable td {
+    padding: 12px 15px;
+    border: 1px solid var(--gate-border-light);
+    text-align: left;
+}
+
+.performanceTable tr:nth-child(even) {
+    background-color: #f9f9f9;
+}
+
+.performanceTable th {
+    background-color: var(--gate-primary-blue);
+    color: var(--gate-text-light);
+    font-weight: bold;
+}
+
+.correct {
+    color: var(--gate-success-green);
+    font-weight: bold;
+}
+
+.incorrect {
+    color: var(--gate-error-red);
+    font-weight: bold;
+}
+
+.obtained {
+    color: var(--gate-primary-blue);
+    font-weight: bold;
+    font-size: 1.2rem;
+}
+
+/* --- View Solutions Button --- */
+.viewSolutionsBtn {
+    display: block;
+    width: auto;
+    margin: 30px auto 10px auto;
+    padding: 12px 25px;
+    background-color: var(--gate-primary-blue);
+    color: var(--gate-text-light);
+    border: none;
+    border-radius: 5px;
+    font-size: 1.1rem;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    text-decoration: none;
+    text-align: center;
+}
+
+.viewSolutionsBtn:hover {
+    background-color: #1a4d70;
+}
+
+/* --- Solutions Page Specific Styles --- */
+.solutionsPage {
+    margin-top: 30px;
+}
+
+.solutionItem {
+    background-color: var(--gate-background-white);
+    border: 1px solid var(--gate-border-light);
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 25px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.solutionItem:last-child {
+    margin-bottom: 0;
+}
+
+.questionText {
+    font-size: 1.1rem;
+    line-height: 1.6;
+    margin-bottom: 15px;
+    color: var(--gate-text-dark);
+}
+
+.solutionOptionsList {
+    list-style: none;
+    padding: 0;
+    margin: 15px 0;
+}
+
+.solutionOptionsList li {
+    padding: 10px 15px;
+    margin-bottom: 8px;
+    border: 1px solid var(--gate-border-light);
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    font-size: 1rem;
+    position: relative;
+}
+
+.solutionOptionsList li .optionLabel {
+    font-weight: bold;
+    margin-right: 10px;
+    color: var(--gate-primary-blue);
+}
+
+/* User's choice and correctness feedback */
+.solutionOptionsList li.userCorrect {
+    background-color: #e6ffe6;
+    border-color: var(--gate-success-green);
+    font-weight: bold;
+}
+
+.solutionOptionsList li.userIncorrect {
+    background-color: #ffe6e6;
+    border-color: var(--gate-error-red);
+    font-weight: bold;
+}
+
+.solutionOptionsList li.correctMissing {
+    background-color: #f0f8ff;
+    border-color: var(--gate-primary-blue);
+}
+
+.userChoice, .correctAnswerLabel {
+    font-size: 0.9em;
+    margin-left: 10px;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-weight: normal;
+    color: var(--gate-neutral-grey);
+}
+
+.userChoice {
+    background-color: #eee;
+}
+
+.correctAnswerLabel {
+    background-color: var(--gate-success-green);
+    color: var(--gate-text-light);
+}
+
+/* NAT Question Styles */
+.natSolutionSummary p {
+    font-size: 1.05rem;
+    margin-bottom: 8px;
+}
+
+.userNatAnswer {
+    font-weight: bold;
+    color: var(--gate-neutral-grey);
+}
+
+.correctNatAnswer {
+    font-weight: bold;
+    color: var(--gate-primary-blue);
+}
+
+/* Solution Explanation */
+.solutionExplanation {
+    margin-top: 20px;
+    padding-top: 15px;
+    border-top: 1px dashed var(--gate-border-light);
+}
+
+.solutionExplanation p {
+    font-size: 1rem;
+    line-height: 1.6;
+    color: var(--gate-neutral-grey);
+}
+
+/* --- Responsive Design Considerations --- */
+@media (max-width: 768px) {
+    .reportContainer {
+        margin: 15px;
+        padding: 20px;
+    }
+
+    .mainHeading {
+        font-size: 1.7rem;
+        margin-bottom: 20px;
+    }
+
+    .subHeading {
+        font-size: 1.4rem;
+    }
+
+    .questionHeading {
+        font-size: 1.15rem;
+    }
+
+    .performanceTable th,
+    .performanceTable td {
+        padding: 10px;
+        font-size: 1rem;
+    }
+
+    .viewSolutionsBtn {
+        padding: 10px 20px;
+        font-size: 1rem;
+    }
+
+    .solutionItem {
+        padding: 15px;
+        margin-bottom: 20px;
+    }
+
+    .questionText {
+        font-size: 1rem;
+    }
+
+    .solutionOptionsList li {
+        font-size: 0.95rem;
+        padding: 8px 12px;
+    }
+}
+
+@media (max-width: 480px) {
+    .reportContainer {
+        margin: 10px;
+        padding: 15px;
+    }
+
+    .mainHeading {
+        font-size: 1.5rem;
+    }
+
+    .subHeading {
+        font-size: 1.2rem;
+    }
+
+    .performanceTable th,
+    .performanceTable td {
+        padding: 8px;
+        font-size: 0.9rem;
+    }
+
+    .solutionOptionsList li {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    .solutionOptionsList li .optionLabel {
+        margin-bottom: 5px;
+    }
+    .userChoice, .correctAnswerLabel {
+        margin-left: 0;
+        margin-top: 5px;
+    }
+}

@@ -1,10 +1,13 @@
+/* src/App.css - For main application layout */
+
 #root {
   max-width: 1280px;
-  margin: 0 auto;
+  margin: 0 auto; /* Keep centering the root container */
   padding: 2rem;
-  text-align: center;
+  /* text-align: center; */ /* Optional - remove if you don't want all content centered by default */
 }
 
+/* These styles are specific to the Vite/React starter template elements */
 .logo {
   height: 6em;
   padding: 1.5em;
@@ -40,3 +43,5 @@
 .read-the-docs {
   color: #888;
 }
+
+/* Any other true app-level layout styles can go here */

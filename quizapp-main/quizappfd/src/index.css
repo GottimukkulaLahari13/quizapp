@@ -1,8 +1,18 @@
+/* src/index.css - Minimal Global Styles */
+
+/* Universal box-sizing for consistent layout */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+/* Root variables - mostly for theme switching if needed */
 :root {
+  /* You can keep global font-family here if ALL pages use it */
   font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
   font-weight: 400;
 
+  /* Global color scheme and default text/background colors */
   color-scheme: light dark;
   color: rgba(255, 255, 255, 0.87);
   background-color: #242424;
@@ -11,31 +21,49 @@
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+
+  /* Add your GATE-like root variables here if you want them globally available */
+  --gate-primary-blue: #235a81;
+  --gate-light-blue: #e0f2f7;
+  --gate-text-dark: #333;
+  --gate-text-light: #fefefe;
+  --gate-border-light: #ddd;
+  --gate-success-green: #4CAF50;
+  --gate-error-red: #F44336;
+  --gate-warning-orange: #FF9800;
+  --gate-neutral-grey: #666;
+  --gate-background-white: #ffffff;
+  --gate-hover-grey: #f0f0f0;
 }
 
-a {
+/* Basic body reset - remove display: flex, place-items, min-width, min-height */
+body {
+  margin: 0;
+  /* Remove display: flex, place-items, min-width, min-height here. */
+  /* These are often specific to the initial 'App' component layout. */
+  /* Allowing components to define their own layout. */
+  /* You can keep min-height: 100vh if you want the page to always take full viewport height */
+   min-height: 100vh;
+}
+
+/* Styles for <a> tags should be more specific or within components */
+/* a {
   font-weight: 500;
   color: #646cff;
   text-decoration: inherit;
 }
 a:hover {
   color: #535bf2;
-}
+} */ /* REMOVED - move to component-specific styling */
 
-body {
-  margin: 0;
-  display: flex;
-  place-items: center;
-  min-width: 320px;
-  min-height: 100vh;
-}
-
-h1 {
+/* Styles for <h1> should be more specific or within components */
+/* h1 {
   font-size: 3.2em;
   line-height: 1.1;
-}
+} */ /* REMOVED - move to component-specific styling */
 
-button {
+/* Styles for <button> should be more specific or within components */
+/* button {
   border-radius: 8px;
   border: 1px solid transparent;
   padding: 0.6em 1.2em;
@@ -52,17 +80,19 @@ button:hover {
 button:focus,
 button:focus-visible {
   outline: 4px auto -webkit-focus-ring-color;
-}
+} */ /* REMOVED - move to component-specific styling */
 
+
+/* Light mode adjustments */
 @media (prefers-color-scheme: light) {
   :root {
     color: #213547;
     background-color: #ffffff;
   }
-  a:hover {
+  /* a:hover {
     color: #747bff;
-  }
-  button {
+  } */ /* REMOVED */
+  /* button {
     background-color: #f9f9f9;
-  }
+  } */ /* REMOVED */
 }

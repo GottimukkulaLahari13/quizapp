@@ -1,7 +1,7 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import axios from "axios";
-import "./Auth.css";
+import "./Auth.css"; // Assuming you have this CSS file
 
 const Login = () => {
   const [email, setEmail] = useState("");
@@ -30,7 +30,19 @@ const Login = () => {
     } catch (err) {
       setLoading(false);
       console.error("Login error:", err);
-      alert(err.response?.data?.error || "Login failed. Please try again.");
+
+      if (err.response) {
+        console.log("Error data:", err.response.data);
+        console.log("Error status:", err.response.status);
+        console.log("Error headers:", err.response.headers);
+        alert(err.response.data.message || "Login failed. Please check your credentials.");
+      } else if (err.request) {
+        console.log("No response received:", err.request);
+        alert("No response from server. Please check your network connection.");
+      } else {
+        console.log("Error setting up request:", err.message);
+        alert("An unexpected error occurred. Please try again.");
+      }
     }
   };
 
@@ -71,7 +83,7 @@ const Login = () => {
         </button>
 
         <p>
-          Don't have an account? <a href="/register">Register here</a>
+          Don't have an account? <Link to="/register">Register here</Link>
         </p>
       </form>
     </div>
