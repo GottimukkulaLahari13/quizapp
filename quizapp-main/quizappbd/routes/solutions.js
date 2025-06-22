@@ -1,38 +1,17 @@
 // backend/routes/solutions.js (Create this file or add to your main API routes)
 
-const express = require('express');
+import express from 'express';
+
 const router = express.Router();
-const pool = require('../db'); // Your database connection pool
 
 // GET /api/solutions/:testSessionId
 router.get('/:testSessionId', async (req, res) => {
     const { testSessionId } = req.params;
+    const db = req.app.locals.db; // Get db from app locals
 
     try {
-        // Step 1: Get all unique question_ids associated with this test_session_id from user_answers.
-        // This assumes that ALL questions for a test session *are* recorded in user_answers,
-        // even if not attempted, or that there's another table linking test sessions to questions.
-        // If not all questions are in user_answers, you'll need a 'test_questions' table
-        // or a way to get the full list of questions for a 'test_id'.
-        // For now, let's assume all relevant questions will show up in user_answers.
-        // If some questions were entirely skipped and not recorded in user_answers,
-        // you'd need a `test_questions` table to get the complete list of questions for a given `test_id`.
-        // For robustness, I'm fetching all questions that exist and then trying to map user answers to them.
-
-        // Get all questions from the 'questions' table.
-        // If you have a 'tests' and 'test_questions' table, you'd filter by test_id here.
-        // For demonstration, we'll fetch all questions for now and match them.
-        // **IMPORTANT**: You need a way to link `testSessionId` to the actual set of questions
-        // for that test. A `test_questions` table is highly recommended.
-        // For this example, let's assume we fetch all questions that were part of *any* test session where an answer was recorded.
-        // A better approach would be to fetch questions linked to `test_id` derived from `testSessionId`.
-
-        // Let's assume `testSessionId` implies a set of questions.
-        // We'll fetch all questions that exist and then try to get their details.
-        // For the sake of getting all 65, we'll make a more comprehensive fetch.
-
-        // Fetch all questions and their options
-        const [questionsRows] = await pool.query(`
+        // Fetch all questions and their options for this test session
+        const [questionsRows] = await db.execute(`
             SELECT
                 q.question_id,
                 q.type,
@@ -62,34 +41,21 @@ router.get('/:testSessionId', async (req, res) => {
                     marks: row.marks,
                     correct_nat_answer: row.correct_nat_answer,
                     options: [],
-                    correct_answer: null, // Will be option_id(s) for MCQ/MSQ
-                    user_answer: null // Will be user_selected_option from user_answers
+                    user_answer: null
                 });
             }
             const question = questionsMap.get(row.question_id);
-            if (row.option_id) { // Only add option if it exists (for MCQ/MSQ)
+            if (row.option_id) {
                 question.options.push({
                     option_id: row.option_id,
                     option_text: row.option_text,
-                    is_correct_option: row.is_correct // This property is useful for frontend
+                    is_correct_option: row.is_correct === 1 // Convert to boolean
                 });
-                if (row.is_correct) {
-                    if (question.type === 'MSQ') {
-                        if (!Array.isArray(question.correct_answer)) {
-                            question.correct_answer = [];
-                        }
-                        question.correct_answer.push(row.option_id);
-                    } else if (question.type === 'MCQ') {
-                        question.correct_answer = row.option_id;
-                    }
-                }
-            } else if (question.type === 'NAT') {
-                question.correct_answer = row.correct_nat_answer; // For NAT, correct_answer is correct_nat_answer
             }
         });
 
-        // Step 2: Fetch user's answers for this session
-        const [userAnswersRows] = await pool.query(
+        // Fetch user's answers for this session
+        const [userAnswersRows] = await db.execute(
             `SELECT question_id, user_selected_option FROM user_answers WHERE test_session_id = ?`,
             [testSessionId]
         );
@@ -97,34 +63,42 @@ router.get('/:testSessionId', async (req, res) => {
         const userAnswersMap = new Map();
         userAnswersRows.forEach(row => {
             let selectedOption = row.user_selected_option;
-            // If MSQ, user_selected_option might be a comma-separated string, convert to array
-            if (questionsMap.get(row.question_id)?.type === 'MSQ' && typeof selectedOption === 'string') {
-                selectedOption = selectedOption.split(','); // Assuming comma-separated
+            
+            // Handle different formats of user_selected_option
+            if (typeof selectedOption === 'string') {
+                try {
+                    // Try to parse as JSON first
+                    const parsed = JSON.parse(selectedOption);
+                    selectedOption = Array.isArray(parsed) ? parsed : [parsed];
+                } catch (e) {
+                    // If not JSON, check if it's comma-separated
+                    if (selectedOption.includes(',')) {
+                        selectedOption = selectedOption.split(',').map(s => s.trim());
+                    } else {
+                        selectedOption = [selectedOption];
+                    }
+                }
+            } else if (typeof selectedOption === 'number') {
+                selectedOption = [selectedOption.toString()];
+            } else if (Array.isArray(selectedOption)) {
+                selectedOption = selectedOption.map(s => s.toString());
+            } else {
+                selectedOption = [];
             }
+            
             userAnswersMap.set(row.question_id, selectedOption);
         });
 
-        // Step 3: Combine all data
-        const finalQuestionsData = Array.from(questionsMap.values()).map(question => {
-            const userSelected = userAnswersMap.get(question.question_id);
-            // Ensure user_answer for MSQ is an array, even if not answered
-            if (question.type === 'MSQ' && userSelected === undefined) {
-                question.user_answer = [];
-            } else {
-                 question.user_answer = userSelected !== undefined ? userSelected : null;
-            }
-            return question;
-        });
+        // Combine data and include all questions (not just attempted ones)
+        const finalQuestionsData = [];
+        for (const [questionId, question] of questionsMap.entries()) {
+            const questionData = { ...question };
+            questionData.user_answer = userAnswersMap.get(questionId) || null;
+            finalQuestionsData.push(questionData);
+        }
 
-        // Sort questions by their question_id or another logical order
-        finalQuestionsData.sort((a, b) => {
-            // Assuming question_id can be compared numerically or alphabetically
-            if (typeof a.question_id === 'number' && typeof b.question_id === 'number') {
-                return a.question_id - b.question_id;
-            }
-            return a.question_id.localeCompare(b.question_id);
-        });
-
+        // Sort questions by question_id
+        finalQuestionsData.sort((a, b) => a.question_id - b.question_id);
 
         res.json(finalQuestionsData);
 
@@ -134,4 +108,4 @@ router.get('/:testSessionId', async (req, res) => {
     }
 });
 
-module.exports = router;
+export default router;

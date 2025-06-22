@@ -6,6 +6,10 @@ import "./TestInterface.css";
 const TestInterface = () => {
   const { testId } = useParams();
   const navigate = useNavigate();
+  const [user, setUser] = useState(null);
+  const [showProfile, setShowProfile] = useState(false);
+  const [visited, setVisited] = useState({});
+  const [currentTime, setCurrentTime] = useState(new Date());
 
   const [allQuestions, setAllQuestions] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -16,9 +20,23 @@ const TestInterface = () => {
   const [review, setReview] = useState({});
   const [timer, setTimer] = useState(180 * 60);
   const [submitted, setSubmitted] = useState(false);
+  const [testStartTime] = useState(Date.now()); // Track when test started
 
   // Generate a unique testSessionId for this attempt
   const [testSessionId] = useState(uuidv4());
+
+  useEffect(() => {
+    const storedUser = localStorage.getItem("user");
+    if (storedUser) {
+      setUser(JSON.parse(storedUser));
+    }
+
+    const timerId = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 1000);
+
+    return () => clearInterval(timerId);
+  }, []);
 
   const sectionQuestions = useMemo(() => {
     const sections = { MCQ: [], MSQ: [], NAT: [] };
@@ -52,6 +70,39 @@ const TestInterface = () => {
     };
     fetchQuestions();
   }, []);
+
+  // Start test session when component mounts
+  useEffect(() => {
+    const startTestSession = async () => {
+      const userId = user ? user.id : null;
+
+      if (userId) {
+        try {
+          await fetch("http://localhost:5000/api/start-test-session", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              userId: userId,
+              testId: testId,
+              testSessionId: testSessionId,
+            }),
+          });
+        } catch (error) {
+          console.error("Error starting test session:", error);
+        }
+      }
+    };
+
+    startTestSession();
+  }, [testId, testSessionId, user]);
+
+  useEffect(() => {
+    if (currentQuestion) {
+      setVisited((prev) => ({ ...prev, [currentQuestion.question_id]: true }));
+    }
+  }, [currentQuestion]);
 
   useEffect(() => {
     if (submitted) return;
@@ -116,9 +167,11 @@ const TestInterface = () => {
   const handleSubmit = async () => {
     setSubmitted(true); // Indicate submission in progress
 
+    // Calculate time taken in seconds
+    const currentTime = Date.now();
+    const timeTakenSeconds = Math.floor((currentTime - testStartTime) / 1000);
+
     // Get user ID from localStorage (assuming it's stored after login)
-    const storedUser = localStorage.getItem('user');
-    const user = storedUser ? JSON.parse(storedUser) : null;
     const userId = user ? user.id : null;
 
     if (!userId) {
@@ -146,6 +199,11 @@ const TestInterface = () => {
       };
     });
 
+    // If no answers were provided, still submit the test session
+    if (answersToSubmit.length === 0) {
+      console.log("No answers provided - submitting empty test session");
+    }
+
     try {
       const response = await fetch("http://localhost:5000/api/submit-answers", {
         method: "POST",
@@ -157,6 +215,7 @@ const TestInterface = () => {
           testId: testId, // Pass testId from params, though not strictly used in current submit-answers logic
           testSessionId: testSessionId, // Unique ID for this test attempt
           userAnswers: answersToSubmit,
+          timeTaken: timeTakenSeconds, // Send time taken in seconds
         }),
       });
 
@@ -169,9 +228,15 @@ const TestInterface = () => {
 
       // Store testSessionId for subsequent report fetching (important!)
       localStorage.setItem("lastTestSessionId", testSessionId);
-      // No need to store answers/questions in local storage for report as we'll fetch from backend
       
-      navigate(`/performance-report/${testId}`); // Redirect to performance report
+      // Calculate time taken for display (formatted)
+      const hours = Math.floor(timeTakenSeconds / 3600);
+      const minutes = Math.floor((timeTakenSeconds % 3600) / 60);
+      const seconds = timeTakenSeconds % 60;
+      const formattedTime = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+      
+      // Navigate to the report page without passing state
+      navigate(`/report/${testId}`);
     } catch (submitError) {
       console.error("Error during answer submission:", submitError);
       alert(`Error submitting test: ${submitError.message}. Please try again.`);
@@ -182,15 +247,18 @@ const TestInterface = () => {
   const getStatusColor = (qId) => {
     const ans = answers[qId];
     const isMarked = review[qId];
+    const isVisited = visited[qId];
 
     // If an answer exists, check if it's a non-empty array for MSQ or any value for MCQ/NAT
     const hasAnswered = (Array.isArray(ans) && ans.length > 0) || (!Array.isArray(ans) && ans !== undefined && ans !== null && ans !== '');
 
-    if (!hasAnswered && !isMarked) return "gray"; // Not visited or not answered and not marked
-    if (!hasAnswered && isMarked) return "orange"; // Marked for review but not answered
-    if (hasAnswered && !isMarked) return "green"; // Answered and not marked for review
-    if (hasAnswered && isMarked) return "blue"; // Answered and marked for review
-    return "red"; // This case should ideally not be reached if conditions are exhaustive
+    if (!isVisited) return "gray"; // Not Visited
+    if (hasAnswered && isMarked) return "blue"; // Answered and Marked
+    if (hasAnswered && !isMarked) return "green"; // Answered
+    if (!hasAnswered && isMarked) return "orange"; // Not Answered but Marked
+    if (isVisited && !hasAnswered) return "red"; // Visited but Not Answered
+    
+    return "gray"; // Default fallback
   };
 
   if (isLoading)
@@ -198,26 +266,7 @@ const TestInterface = () => {
   if (error) return <div className="loading-container error">Error: {error}</div>;
 
   if (submitted) {
-    return (
-      <div className="submission-success-block">
-        <h2>Test Submitted Successfully!</h2>
-        <p>You can now view your performance report or detailed solutions.</p>
-        <div className="submission-buttons">
-          <button
-            className="btn-report"
-            onClick={() => navigate(`/performance-report/${testId}`)}
-          >
-            View Performance Report
-          </button>
-          <button
-            className="btn-solutions"
-            onClick={() => navigate(`/solutions/${testId}`)}
-          >
-            View Solutions
-          </button>
-        </div>
-      </div>
-    );
+    return <div className="loading-container">Submitting test...</div>;
   }
 
   if (!currentQuestion)
@@ -246,15 +295,17 @@ const TestInterface = () => {
               </div>
             ))}
           </div>
-          <div className="timer-container">
-            <span className="timer-label">Time Remaining:</span>
-            <span className="timer-value">{formatTime(timer)}</span>
-          </div>
         </div>
 
         {/* Question and Options */}
         <div className="question-section">
           <div className="question-area">
+            <div className="question-marks-info">
+              <span>Marks: {currentQuestion.marks}</span>
+              {currentQuestion.type === 'MCQ' && (
+                <span className="negative-marks">Negative Marks: -{(currentQuestion.marks / 3).toFixed(2)}</span>
+              )}
+            </div>
             <h4>
               Question {currentIndex + 1} - {section}
             </h4>
@@ -345,6 +396,28 @@ const TestInterface = () => {
 
         {/* Sidebar with Question Palette and Legend */}
         <div className="sidebar">
+          <div className="profile-sidebar">
+            <div className="profile-header" onClick={() => setShowProfile(!showProfile)}>
+              <span>Profile & Session</span>
+              <span className="profile-toggle">{showProfile ? '▼' : '▶'}</span>
+            </div>
+            {showProfile && user && (
+              <div className="profile-details">
+                <div className="profile-info-item">
+                  <strong>Email:</strong> {user.email}
+                </div>
+                <div className="profile-info-item">
+                  <strong>Session ID:</strong> {testSessionId}
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div className="sidebar-timer-container">
+            <span className="timer-label">Time Remaining:</span>
+            <span className="timer-value">{formatTime(timer)}</span>
+          </div>
+
           <div className="palette-container">
             <div className="palette-section">
               {currentSectionQuestions.map((q, idx) => (

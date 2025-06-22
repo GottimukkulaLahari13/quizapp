@@ -1,21 +1,38 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import styles from "./Dashboard.module.css";
 
 const Dashboard = () => {
   const [showDropdown, setShowDropdown] = useState(false);
   const [activeTab, setActiveTab] = useState("home");
-  const [tests, setTests] = useState([]); // This would be fetched from a /api/tests endpoint in a real app
-  const [userTestSessions, setUserTestSessions] = useState([]); // To store a list of completed test sessions
-  const [selectedTestSessionResults, setSelectedTestSessionResults] = useState(null); // To store detailed results of a specific session
+  const [tests, setTests] = useState([]);
+  const [userTestSessions, setUserTestSessions] = useState([]);
+  const [selectedTestSessionResults, setSelectedTestSessionResults] = useState(null);
+  const [changePasswordData, setChangePasswordData] = useState({
+    currentPassword: "",
+    newPassword: "",
+    confirmPassword: ""
+  });
+  const [message, setMessage] = useState({ text: "", type: "" });
+  const [userProfile, setUserProfile] = useState(null);
 
   const navigate = useNavigate();
   const user = JSON.parse(localStorage.getItem("user"));
 
   useEffect(() => {
-    if (!user) {
-      navigate("/login");
-    }
+    if (!user) navigate("/login");
+    else fetchUserProfile();
   }, [navigate, user]);
+
+  const fetchUserProfile = async () => {
+    try {
+      const response = await fetch(`http://localhost:5000/api/user/${user.id}/profile`);
+      const data = await response.json();
+      setUserProfile(data);
+    } catch (error) {
+      console.error("Error fetching user profile:", error);
+    }
+  };
 
   const handleLogout = () => {
     localStorage.removeItem("user");
@@ -23,239 +40,292 @@ const Dashboard = () => {
   };
 
   const fetchUserTestSessions = async () => {
-    if (!user || !user.id) {
-      console.error("User not logged in or user ID not available.");
-      return;
-    }
+    if (!user?.id) return;
     try {
       const response = await fetch(`http://localhost:5000/api/user/${user.id}/test-sessions`);
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
       const data = await response.json();
-      setUserTestSessions(data.testSessions);
+      setUserTestSessions(data.testSessions || []);
     } catch (error) {
       console.error("Error fetching user test sessions:", error);
-      // Optionally, show an error message to the user
     }
   };
 
   const fetchDetailedTestResults = async (testSessionId) => {
-    if (!user || !user.id || !testSessionId) {
-      console.error("User or test session ID missing.");
-      return;
-    }
+    if (!user?.id || !testSessionId) return;
     try {
       const response = await fetch(`http://localhost:5000/api/results/${user.id}/${testSessionId}`);
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
       const data = await response.json();
-      setSelectedTestSessionResults(data); // Store the entire result object
+      setSelectedTestSessionResults(data);
     } catch (error) {
-      console.error(`Error fetching results for session ${testSessionId}:`, error);
-      setSelectedTestSessionResults(null); // Clear previous results
-      // Optionally, show an error message to the user
+      console.error("Error fetching results:", error);
+      setSelectedTestSessionResults(null);
     }
   };
 
   const handleTabClick = (tab) => {
     setActiveTab(tab);
+    setShowDropdown(false);
     if (tab === "mycourses") {
-      // In a real application, you would fetch these tests from your backend
-      // For now, using the hardcoded list
       setTests([
-        {
-          id: 101,
-          name: "GATE 2025 Mock Test",
-          type: "GATE Exam Mock Test"
-        },
-        // Add more tests as needed
+        { id: 101, name: "GATE 2025 Mock Test", type: "GATE Exam Mock Test" },
       ]);
     } else if (tab === "results") {
-      fetchUserTestSessions(); // Fetch test sessions when results tab is active
-      setSelectedTestSessionResults(null); // Clear detailed results when switching to overall sessions view
+      fetchUserTestSessions();
+      setSelectedTestSessionResults(null);
     }
   };
 
-  // This function now correctly opens the instructions in a new window
   const handleTestLaunch = (testId) => {
     const instructionURL = `${window.location.origin}/instructions/${testId}`;
     window.open(instructionURL, '_blank', 'width=1200,height=800');
   };
 
-  // Helper function to format answers for display in results table
-  const formatAnswerDisplay = (questionType, selectedOption, selectedOptionsText, natAnswer) => {
-    if (questionType === 'MCQ' || questionType === 'MSQ') {
-        return selectedOptionsText && selectedOptionsText.length > 0
-            ? selectedOptionsText.join(', ')
-            : 'No answer';
-    } else if (questionType === 'NAT') {
-        return natAnswer !== null && natAnswer !== undefined
-            ? String(natAnswer)
-            : 'No answer';
+  const handleChangePassword = async (e) => {
+    e.preventDefault();
+    if (changePasswordData.newPassword !== changePasswordData.confirmPassword) {
+      setMessage({ text: "New passwords do not match.", type: "error" });
+      return;
     }
-    return 'N/A';
+    try {
+      const res = await fetch("http://localhost:5000/api/change-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: user.id, ...changePasswordData }),
+      });
+      const data = await res.json();
+      setMessage({ text: data.message || "Password updated successfully.", type: "success" });
+      setChangePasswordData({ currentPassword: "", newPassword: "", confirmPassword: "" });
+    } catch (err) {
+      console.error("Change password error:", err);
+      setMessage({ text: "Error updating password.", type: "error" });
+    }
   };
 
   return (
-    <div style={{ display: "flex", height: "100vh", width: "100vw", margin: 0 }}>
+    <div className={styles.dashboardContainer}>
       {/* Sidebar */}
-      <div
-        style={{
-          width: "220px",
-          backgroundColor: "#2C2F48",
-          color: "#fff",
-          padding: "20px",
-          display: "flex",
-          flexDirection: "column"
-        }}
-      >
-        <h2>Dashboard</h2>
-        <ul style={{ listStyle: "none", padding: 0, marginTop: "30px" }}>
-          <li onClick={() => handleTabClick("mycourses")} style={{ cursor: "pointer", marginBottom: 10 }}>My Courses</li>
-          <li onClick={() => handleTabClick("results")} style={{ cursor: "pointer" }}>Results</li>
+      <div className={styles.sidebar}>
+        <h2 className={styles.sidebarTitle}>Dashboard</h2>
+        <ul className={styles.sidebarMenu}>
+          <li 
+            className={`${styles.sidebarMenuItem} ${activeTab === "mycourses" ? styles.active : ""}`}
+            onClick={() => handleTabClick("mycourses")}
+          >
+            My Courses
+          </li>
+          <li 
+            className={`${styles.sidebarMenuItem} ${activeTab === "results" ? styles.active : ""}`}
+            onClick={() => handleTabClick("results")}
+          >
+            Results
+          </li>
         </ul>
       </div>
 
       {/* Main Content */}
-      <div style={{ flex: 1, position: "relative", backgroundColor: "#f9f9f9" }}>
-        {/* Profile */}
-        <div style={{ position: "absolute", top: 20, right: 30 }}>
+      <div className={styles.mainContent}>
+        {/* Profile Section */}
+        <div className={styles.profileSection}>
           <img
-            src={user?.profile || "/uploads/default.jpg"}
+            src={userProfile?.profile_pic || "/uploads/default.jpg"}
             alt="Profile"
-            style={{ width: 45, height: 45, borderRadius: "50%", border: "2px solid #ccc", cursor: "pointer" }}
+            className={styles.profileImage}
             onClick={() => setShowDropdown(!showDropdown)}
           />
           {showDropdown && (
-            <div style={{ position: "absolute", top: 50, right: 0, backgroundColor: "#fff", padding: 10, borderRadius: 6, border: "1px solid #ddd", zIndex: 1000 }}>
-              <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
-                <li>My Profile</li>
-                <li>Change Password</li>
-                <li onClick={handleLogout} style={{ color: "red", cursor: "pointer" }}>Logout</li>
+            <div className={styles.profileDropdown}>
+              <ul className={styles.dropdownMenu}>
+                <li className={styles.dropdownItem} onClick={() => setActiveTab("myprofile")}>
+                  My Profile
+                </li>
+                <li className={styles.dropdownItem} onClick={() => setActiveTab("changepassword")}>
+                  Change Password
+                </li>
+                <li className={`${styles.dropdownItem} ${styles.logout}`} onClick={handleLogout}>
+                  Logout
+                </li>
               </ul>
             </div>
           )}
         </div>
 
-        {/* Tabs Content */}
-        {activeTab === "home" && (
-          <div style={{ height: "100%", display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column" }}>
-            <h2>Welcome to Dashboard</h2>
-            <p>This is the user dashboard after login.</p>
-          </div>
-        )}
+        <div className={styles.contentSection}>
+          {/* Tabs Content */}
+          {activeTab === "home" && (
+            <div style={{ textAlign: "center", marginTop: "2rem" }}>
+              <h2>Welcome to Dashboard</h2>
+              <p>This is the user dashboard after login.</p>
+            </div>
+          )}
 
-        {activeTab === "mycourses" && (
-          <div style={{ padding: 40 }}>
-            <h2>Available Tests</h2>
-            {tests.length > 0 ? (
-              tests.map(test => (
-                <div key={test.id} style={{ marginBottom: 20, backgroundColor: "#fff", padding: 20, borderRadius: 8, boxShadow: "0 2px 4px rgba(0,0,0,0.1)" }}>
-                  <h4>{test.name}</h4>
-                  <button onClick={() => handleTestLaunch(test.id)} style={{ padding: "10px 20px", backgroundColor: "#2C2F48", color: "#fff", border: "none", borderRadius: 4, cursor: "pointer" }}>Start Test</button>
-                </div>
-              ))
-            ) : (
-              <p>No tests available at the moment.</p>
-            )}
-          </div>
-        )}
-
-        {activeTab === "results" && (
-          <div style={{ padding: 40 }}>
-            <h2>Test Results</h2>
-            {!selectedTestSessionResults ? (
-              // Display list of test sessions
-              userTestSessions.length > 0 ? (
-                <div>
-                  <h3>Your Completed Test Sessions:</h3>
-                  <table style={{ width: "100%", borderCollapse: "collapse", marginTop: "20px" }}>
-                    <thead>
-                      <tr>
-                        <th style={{ border: "1px solid #eee", padding: "10px", textAlign: "left", backgroundColor: "#f2f2f2" }}>Session ID</th>
-                        <th style={{ border: "1px solid #eee", padding: "10px", textAlign: "left", backgroundColor: "#f2f2f2" }}>Attempted At</th>
-                        <th style={{ border: "1px solid #eee", padding: "10px", textAlign: "left", backgroundColor: "#f2f2f2" }}>Action</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {userTestSessions.map((session, index) => (
-                        <tr key={index}>
-                          <td style={{ border: "1px solid #eee", padding: "10px" }}>{session.test_session_id}</td>
-                          <td style={{ border: "1px solid #eee", padding: "10px" }}>{new Date(session.answered_at).toLocaleString()}</td>
-                          <td style={{ border: "1px solid #eee", padding: "10px" }}>
-                            <button
-                              onClick={() => fetchDetailedTestResults(session.test_session_id)}
-                              style={{ padding: "8px 15px", backgroundColor: "#007bff", color: "#fff", border: "none", borderRadius: 4, cursor: "pointer" }}
-                            >
-                              View Results
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              ) : (
-                <p>No completed test sessions found yet.</p>
-              )
-            ) : (
-              // Display detailed results for the selected session
-              <div>
-                <button
-                  onClick={() => setSelectedTestSessionResults(null)}
-                  style={{ marginBottom: "20px", padding: "8px 15px", backgroundColor: "#6c757d", color: "#fff", border: "none", borderRadius: 4, cursor: "pointer" }}
-                >
-                  &larr; Back to Sessions
-                </button>
-                <h3>Results for Session: {selectedTestSessionResults.testSessionId}</h3>
-                <div style={{ marginBottom: "20px", padding: "15px", backgroundColor: "#e9ecef", borderRadius: "8px" }}>
-                  <p><strong>Overall Score:</strong> {selectedTestSessionResults.overallScore !== undefined && selectedTestSessionResults.overallScore !== null ? `${selectedTestSessionResults.overallScore.toFixed(2)}%` : 'N/A'}</p>
-                  <p><strong>Total Questions:</strong> {selectedTestSessionResults.totalQuestions}</p>
-                  <p><strong>Correctly Answered:</strong> {selectedTestSessionResults.correctAnswersCount}</p>
-                  <p><strong>Incorrectly Answered:</strong> {selectedTestSessionResults.incorrectAnswersCount}</p>
-                  <p><strong>Unattempted:</strong> {selectedTestSessionResults.unansweredQuestionsCount}</p>
-                </div>
-                <table style={{ width: "100%", borderCollapse: "collapse" }}>
-                  <thead>
-                    <tr>
-                      <th style={{ border: "1px solid #ccc", padding: "8px", backgroundColor: "#f2f2f2" }}>Q. No.</th>
-                      <th style={{ border: "1px solid #ccc", padding: "8px", backgroundColor: "#f2f2f2" }}>Question</th>
-                      <th style={{ border: "1px solid #ccc", padding: "8px", backgroundColor: "#f2f2f2" }}>Your Answer</th>
-                      <th style={{ border: "1px solid #ccc", padding: "8px", backgroundColor: "#f2f2f2" }}>Correct Answer</th>
-                      <th style={{ border: "1px solid #ccc", padding: "8px", backgroundColor: "#f2f2f2" }}>Marks</th>
-                      <th style={{ border: "1px solid #ccc", padding: "8px", backgroundColor: "#f2f2f2" }}>Status</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {selectedTestSessionResults.results.map((result, idx) => (
-                      <tr key={idx} style={{ backgroundColor: result.is_correct ? '#e6ffe6' : (result.has_user_answered ? '#ffe6e6' : '#f8f8f8') }}>
-                        <td style={{ border: "1px solid #ccc", padding: "8px" }}>{idx + 1}</td>
-                        <td style={{ border: "1px solid #ccc", padding: "8px" }}>{result.question_text}</td>
-                        <td style={{ border: "1px solid #ccc", padding: "8px" }}>
-                            {formatAnswerDisplay(result.question_type, result.user_selected_option, result.user_selected_options_text, result.user_nat_answer)}
-                        </td>
-                        <td style={{ border: "1px solid #ccc", padding: "8px" }}>
-                            {result.question_type === 'MCQ' || result.question_type === 'MSQ'
-                                ? result.correct_options_text.join(', ')
-                                : result.question_type === 'NAT'
-                                    ? result.correct_nat_answer
-                                    : 'N/A'
-                            }
-                        </td>
-                        <td style={{ border: "1px solid #ccc", padding: "8px" }}>{result.marks_obtained !== undefined ? result.marks_obtained : 'N/A'} / {result.total_marks_possible || 'N/A'}</td>
-                        <td style={{ border: "1px solid #ccc", padding: "8px", color: result.is_correct ? 'green' : (result.has_user_answered ? 'red' : 'gray') }}>
-                            {result.is_correct ? 'Correct' : (result.has_user_answered ? 'Incorrect' : 'Unanswered')}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+          {activeTab === "mycourses" && (
+            <div>
+              <h2>Available Tests</h2>
+              <div className={styles.testsGrid}>
+                {tests.length > 0 ? (
+                  tests.map(test => (
+                    <div key={test.id} className={styles.testCard}>
+                      <h4>{test.name}</h4>
+                      <p>{test.type}</p>
+                      <button onClick={() => handleTestLaunch(test.id)} className={styles.submitButton}>
+                        Start Test
+                      </button>
+                    </div>
+                  ))
+                ) : (
+                  <p>No tests available at the moment.</p>
+                )}
               </div>
-            )}
-          </div>
-        )}
+            </div>
+          )}
+
+          {activeTab === "results" && (
+            <div>
+              <h2>Test Results</h2>
+              {!selectedTestSessionResults ? (
+                userTestSessions.length > 0 ? (
+                  <div className={styles.resultsTable}>
+                    <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                      <thead>
+                        <tr>
+                          <th>Session ID</th>
+                          <th>Attempted At</th>
+                          <th>Action</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {userTestSessions.map((session, index) => (
+                          <tr key={index}>
+                            <td>{session.test_session_id}</td>
+                            <td>{new Date(session.answered_at).toLocaleString()}</td>
+                            <td>
+                              <button 
+                                onClick={() => fetchDetailedTestResults(session.test_session_id)} 
+                                className={styles.submitButton}
+                              >
+                                View Results
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                ) : (
+                  <p>No completed test sessions found yet.</p>
+                )
+              ) : (
+                <div className={styles.resultsDetail}>
+                  <button 
+                    onClick={() => setSelectedTestSessionResults(null)} 
+                    className={styles.backButton}
+                  >
+                    &larr; Back to Sessions
+                  </button>
+                  <h3>Results for Session: {selectedTestSessionResults.testSessionId}</h3>
+                  <div className={styles.statsGrid}>
+                    <div className={styles.statCard}>
+                      <div className={styles.statValue}>
+                        {selectedTestSessionResults.overallScore?.toFixed(2)}%
+                      </div>
+                      <div className={styles.statLabel}>Score</div>
+                    </div>
+                    <div className={styles.statCard}>
+                      <div className={styles.statValue}>
+                        {selectedTestSessionResults.totalQuestions}
+                      </div>
+                      <div className={styles.statLabel}>Total Questions</div>
+                    </div>
+                    <div className={styles.statCard}>
+                      <div className={styles.statValue}>
+                        {selectedTestSessionResults.correctAnswersCount}
+                      </div>
+                      <div className={styles.statLabel}>Correct Answers</div>
+                    </div>
+                    <div className={styles.statCard}>
+                      <div className={styles.statValue}>
+                        {selectedTestSessionResults.incorrectAnswersCount}
+                      </div>
+                      <div className={styles.statLabel}>Incorrect Answers</div>
+                    </div>
+                    <div className={styles.statCard}>
+                      <div className={styles.statValue}>
+                        {selectedTestSessionResults.unansweredQuestionsCount}
+                      </div>
+                      <div className={styles.statLabel}>Unattempted</div>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {activeTab === "myprofile" && (
+            <div className={styles.profileCard}>
+              <div className={styles.profileHeader}>
+                <img 
+                  src={userProfile?.profile_pic || "/uploads/default.jpg"} 
+                  alt="Profile" 
+                  className={styles.largeProfileImage} 
+                />
+                <h2>{userProfile?.full_name || user?.name}</h2>
+              </div>
+              <div className={styles.profileInfo}>
+                <div className={styles.profileLabel}>Email:</div>
+                <div className={styles.profileValue}>{userProfile?.email || user?.email}</div>
+                
+                <div className={styles.profileLabel}>Phone:</div>
+                <div className={styles.profileValue}>{userProfile?.phone || "Not provided"}</div>
+                
+                <div className={styles.profileLabel}>College:</div>
+                <div className={styles.profileValue}>{userProfile?.college_name || "Not provided"}</div>
+                
+                <div className={styles.profileLabel}>College ID:</div>
+                <div className={styles.profileValue}>{userProfile?.college_id || "Not provided"}</div>
+              </div>
+            </div>
+          )}
+
+          {activeTab === "changepassword" && (
+            <div className={styles.profileCard}>
+              <h2 style={{ marginBottom: "2rem", textAlign: "center" }}>Change Password</h2>
+              <form onSubmit={handleChangePassword} className={styles.changePasswordForm}>
+                <input
+                  type="password"
+                  placeholder="Current Password"
+                  required
+                  className={styles.formInput}
+                  value={changePasswordData.currentPassword}
+                  onChange={(e) => setChangePasswordData({ ...changePasswordData, currentPassword: e.target.value })}
+                />
+                <input
+                  type="password"
+                  placeholder="New Password"
+                  required
+                  className={styles.formInput}
+                  value={changePasswordData.newPassword}
+                  onChange={(e) => setChangePasswordData({ ...changePasswordData, newPassword: e.target.value })}
+                />
+                <input
+                  type="password"
+                  placeholder="Confirm Password"
+                  required
+                  className={styles.formInput}
+                  value={changePasswordData.confirmPassword}
+                  onChange={(e) => setChangePasswordData({ ...changePasswordData, confirmPassword: e.target.value })}
+                />
+                <button type="submit" className={styles.submitButton}>
+                  Update Password
+                </button>
+              </form>
+              {message.text && (
+                <div className={`${styles.message} ${styles[message.type]}`}>
+                  {message.text}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

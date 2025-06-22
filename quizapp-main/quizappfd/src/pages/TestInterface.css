@@ -66,12 +66,14 @@ html, body {
 }
 
 .question-area h4 {
-  font-size: 1.1em;
-  color: #495057;
-  margin-bottom: 20px;
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+  padding: 10px;
+  background-color: #fff;
+  border-radius: 5px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
 }
 
 .question-marks {
@@ -127,51 +129,65 @@ html, body {
 .nat-input-container {
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
+  align-items: center;
+  gap: 20px;
+  margin-top: 20px;
 }
 
 .nat-input {
+  width: 200px;
   padding: 12px;
   font-size: 1.1em;
-  width: 50%;
-  max-width: 300px;
-  border: 1px solid #ced4da;
+  border: 2px solid #ced4da;
   border-radius: 4px;
-  margin-bottom: 20px;
+  text-align: right;
+  outline: none;
+}
+
+.nat-input:focus {
+  border-color: #007bff;
+  box-shadow: 0 0 0 0.2rem rgba(0,123,255,.25);
 }
 
 .calculator-grid {
   display: grid;
-  grid-template-columns: repeat(3, 80px);
-  gap: 10px;
-  background-color: #f0f0f0;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  max-width: 300px;
   padding: 15px;
+  background-color: #f8f9fa;
   border-radius: 8px;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
 .calculator-grid button {
   padding: 15px;
   font-size: 1.2em;
-  font-weight: bold;
-  border: 1px solid #ccc;
-  border-radius: 5px;
-  background-color: #e9ecef;
+  border: 1px solid #dee2e6;
+  border-radius: 4px;
+  background-color: white;
+  color: #333;
   cursor: pointer;
-  transition: background-color 0.2s, transform 0.1s;
+  transition: all 0.2s ease;
 }
 
 .calculator-grid button:hover {
-  background-color: #d1d6db;
+  background-color: #e9ecef;
   transform: translateY(-1px);
 }
 
-.calculator-grid button.clear-calc-btn {
-  background-color: #dc3545;
-  color: white;
+.calculator-grid button:active {
+  transform: translateY(1px);
 }
 
-.calculator-grid button.clear-calc-btn:hover {
+.calculator-grid .clear-btn {
+  grid-column: 1 / -1;
+  background-color: #dc3545;
+  color: white;
+  font-weight: 500;
+}
+
+.calculator-grid .clear-btn:hover {
   background-color: #c82333;
 }
 
@@ -204,62 +220,53 @@ html, body {
 }
 
 .palette-item {
-  width: 45px;
-  height: 45px;
+  width: 35px;
+  height: 35px;
   display: flex;
   align-items: center;
   justify-content: center;
   border-radius: 50%;
   color: white;
-  font-weight: 700;
+  font-weight: 500;
   cursor: pointer;
-  transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
-  border: 2px solid transparent;
-  user-select: none;
-}
-
-.palette-item.current {
-  border-color: #343a40;
-  box-shadow: 0 0 0 3px #fff, 0 0 0 5px #343a40;
-  transform: scale(1.1);
+  transition: transform 0.2s;
+  margin: 5px;
+  font-size: 0.9em;
 }
 
 .palette-item:hover {
-  transform: scale(1.05);
-  box-shadow: 0 0 0 2px #fff, 0 0 0 4px rgba(0, 123, 255, 0.5);
+  transform: scale(1.1);
 }
 
-/* Colors */
+.palette-item.current {
+  border: 2px solid #000;
+}
+
+/* Color codes as per image */
 .palette-item.gray { background-color: #adb5bd; }
 .palette-item.red { background-color: #dc3545; }
 .palette-item.green { background-color: #28a745; }
-.palette-item.orange {
-  background-color: #fd7e14;
-  border-radius: 50%;
-}
-.palette-item.blue {
+.palette-item.orange { background-color: #fd7e14; }
+.palette-item.blue { 
   background-color: #007bff;
-  border-radius: 50%;
+  position: relative;
 }
 
 /* Legend Section (palette symbols) */
 .legend {
+  margin-top: 20px;
   padding: 15px;
   background-color: #f8f9fa;
-  border-radius: 5px;
-  margin-top: 20px;
-  border: 1px solid #e0e0e0;
-  text-align: left;
-  font-size: 0.95em;
-  color: #555;
-  user-select: none;
+  border-radius: 8px;
+  border: 1px solid #dee2e6;
 }
 
 .legend h4 {
-  margin: 0 0 10px 0;
+  margin-top: 0;
+  margin-bottom: 15px;
   font-size: 1.1em;
-  text-align: center;
   color: #343a40;
+  text-align: center;
 }
 
 .legend ul {
@@ -271,44 +278,161 @@ html, body {
 .legend li {
   display: flex;
   align-items: center;
-  margin-bottom: 10px;
-  font-size: 0.95em;
-  color: #555;
+  margin-bottom: 8px;
+  font-size: 0.9em;
 }
 
 .legend-shape {
-  width: 25px;
-  height: 25px;
-  margin-right: 12px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  margin-right: 10px;
   flex-shrink: 0;
-  border-radius: 4px;
-  border: 1px solid rgba(0,0,0,0.1);
 }
 
 .legend-shape.gray { background-color: #adb5bd; }
 .legend-shape.red { background-color: #dc3545; }
 .legend-shape.green { background-color: #28a745; }
-.legend-shape.orange {
-  background-color: #fd7e14;
-  border-radius: 4px;
+.legend-shape.orange { background-color: #fd7e14; }
+.legend-shape.blue { background-color: #007bff; }
+
+/* Profile Section Styles */
+.profile-section {
+  background-color: #fff;
+  border-radius: 5px;
+  margin-bottom: 15px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
 }
-.legend-shape.blue {
-  background-color: #007bff;
-  border-radius: 4px;
-  position: relative;
+
+.profile-header {
   display: flex;
-  justify-content: center;
+  align-items: center;
+  padding: 12px 15px;
+  cursor: pointer;
+  border-bottom: 1px solid #eee;
+}
+
+.profile-icon {
+  font-size: 1.2em;
+  margin-right: 10px;
+}
+
+.profile-name {
+  flex: 1;
+  font-weight: 500;
+  color: #333;
+}
+
+.profile-toggle {
+  color: #666;
+  font-size: 0.8em;
+}
+
+.profile-details {
+  padding: 10px 15px;
+  background-color: #f8f9fa;
+}
+
+.profile-detail {
+  display: flex;
+  justify-content: space-between;
+  margin: 5px 0;
+  font-size: 0.9em;
+}
+
+.detail-label {
+  color: #666;
+  font-weight: 500;
+}
+
+.detail-value {
+  color: #333;
+  word-break: break-all;
+}
+
+/* Profile and Session Info in Sidebar */
+.profile-sidebar {
+  background-color: #fff;
+  border-radius: 8px;
+  padding: 10px;
+  margin-bottom: 15px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.07);
+  border: 1px solid #e0e0e0;
+}
+
+.profile-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  font-weight: 600;
+  color: #004085;
+}
+
+.profile-toggle {
+  font-size: 0.8em;
+}
+
+.profile-details {
+  margin-top: 10px;
+  border-top: 1px solid #e0e0e0;
+  padding-top: 10px;
+}
+
+.profile-info-item {
+  font-size: 0.9em;
+  color: #495057;
+  margin-bottom: 8px;
+  word-wrap: break-word;
+}
+
+.profile-info-item:last-child {
+  margin-bottom: 0;
+}
+
+.profile-info-item strong {
+  color: #212529;
+}
+
+/* Timer in Sidebar */
+.sidebar-timer-container {
+  text-align: center;
+  padding: 15px;
+  background-color: #004085;
+  color: white;
+  border-radius: 8px;
+  margin-bottom: 15px;
+}
+
+.sidebar-timer-container .timer-label {
+  display: block;
+  font-size: 0.9em;
+  margin-bottom: 5px;
+}
+
+.sidebar-timer-container .timer-value {
+  font-size: 1.5em;
+  font-weight: 700;
+  letter-spacing: 2px;
+}
+
+/* Question Marks Info Box */
+.question-marks-info {
+  background-color: #e7f5ff;
+  border-left: 4px solid #007bff;
+  padding: 10px 15px;
+  margin-bottom: 20px;
+  border-radius: 4px;
+  font-size: 0.95em;
+  font-weight: 500;
+  display: flex;
+  justify-content: space-between;
   align-items: center;
 }
 
-.legend-shape.blue::after {
-  content: '';
-  display: block;
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  background-color: #28a745;
-  position: absolute;
+.question-marks-info .negative-marks {
+  color: #c82333;
+  font-weight: 600;
 }
 
 /* --- Bottom Fixed Footer: Buttons --- */
@@ -316,90 +440,121 @@ html, body {
   position: fixed;
   bottom: 0;
   left: 0;
-  width: 100vw;
+  right: 0;
   background-color: #ffffff;
-  border-top: 1px solid #e0e0e0;
+  padding: 15px 30px;
   display: flex;
-  justify-content: center;
-  gap: 15px;
-  padding: 15px 20px;
-  box-sizing: border-box;
-  z-index: 100;
-  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  border-top: 1px solid #e0e0e0;
+  box-shadow: 0 -2px 5px rgba(0,0,0,0.05);
 }
 
 .main-footer button {
-  padding: 10px 25px;
-  border-radius: 5px;
+  padding: 10px 20px;
   font-size: 1em;
-  font-weight: 600;
+  border-radius: 5px;
   cursor: pointer;
   border: 1px solid transparent;
-  transition: background-color 0.2s, color 0.2s, border-color 0.2s;
-  min-width: 150px;
-  user-select: none;
+  transition: all 0.2s ease;
 }
 
 .main-footer .nav-btn {
-  background-color: #007bff;
+  background-color: #6c757d;
   color: white;
-  border-color: #007bff;
 }
+
 .main-footer .nav-btn:hover:enabled {
-  background-color: #0056b3;
-  border-color: #0056b3;
+  background-color: #5a6268;
 }
+
 .main-footer .nav-btn:disabled {
-  background-color: #cce5ff;
-  border-color: #cce5ff;
+  background-color: #adb5bd;
   cursor: not-allowed;
   opacity: 0.7;
 }
 
 .main-footer .review-btn {
-  background-color: #9c27b0;
-  color: white;
-  border-color: #9c27b0;
+  background-color: #ffc107;
+  color: #212529;
 }
+
 .main-footer .review-btn:hover:enabled {
-  background-color: #7b1fa2;
-  border-color: #7b1fa2;
+  background-color: #e0a800;
 }
 
 .submit-btn {
   background-color: #28a745;
   color: white;
-  border: none;
-  border-radius: 5px;
-  font-size: 1.1em;
-  font-weight: 700;
-  padding: 10px 25px;
-  cursor: pointer;
-  transition: background-color 0.2s;
+  font-weight: bold;
 }
+
 .submit-btn:hover:enabled {
   background-color: #218838;
 }
+
 .submit-btn:disabled {
-  background-color: #a4d8af;
+  background-color: #83d494;
   cursor: not-allowed;
-  opacity: 0.7;
 }
 
-/* --- View Solutions Button --- */
-.view-solutions-btn {
+.submission-success-block {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  text-align: center;
+}
+
+.submission-buttons {
   margin-top: 20px;
-  padding: 10px 25px;
-  font-size: 1em;
+}
+
+.btn-report, .btn-solutions {
+  padding: 10px 20px;
+  margin: 0 10px;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.btn-report {
   background-color: #007bff;
   color: white;
-  border: none;
-  border-radius: 5px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background-color 0.3s ease-in-out;
 }
 
-.view-solutions-btn:hover {
-  background-color: #0056b3;
+.btn-solutions {
+  background-color: #17a2b8;
+  color: white;
+}
+
+/* Timer Display */
+.timer-display {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  background-color: #f8f9fa;
+  padding: 8px 15px;
+  border-radius: 4px;
+  font-weight: 600;
+  color: #333;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+/* Marks Info */
+.marks-info-container {
+  margin-bottom: 15px;
+}
+
+.marks-info {
+  background-color: #f8f9fa;
+  padding: 8px 15px;
+  border-radius: 4px;
+  font-size: 0.9em;
+  color: #333;
+}
+
+.negative-marks {
+  margin-left: 5px;
+  color: #dc3545;
 }

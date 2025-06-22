@@ -1,7 +1,8 @@
-const express = require('express');
+import express from 'express';
+import db from '../db.js';
+import verifyAdmin from '../middleware/verifyAdmin.js';
+
 const router = express.Router();
-const db = require('../db');
-const verifyAdmin = require('../middleware/verifyAdmin');
 
 // View All Tests
 router.get('/tests', verifyAdmin, async (req, res) => {
@@ -29,4 +30,4 @@ router.delete('/tests/:id', verifyAdmin, async (req, res) => {
   res.send("Test deleted");
 });
 
-module.exports = router;
+export default router;

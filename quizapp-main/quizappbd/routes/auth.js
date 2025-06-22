@@ -1,14 +1,29 @@
 // backend/routes/auth.js
-const express = require('express');
-const multer = require('multer');
-const path = require('path');
-const fs = require('fs');
-const nodemailer = require('nodemailer');
-const bcrypt = require('bcryptjs'); // Switched to bcryptjs for better compatibility
-const crypto = require('crypto');
-const db = require('../db'); // This now imports the mysql2 promise pool
+import express from 'express';
+import multer from 'multer';
+import path from 'path';
+import fs from 'fs';
+import nodemailer from 'nodemailer';
+import bcrypt from 'bcryptjs';
+import crypto from 'crypto';
+import db from '../db.js';
+import jwt from 'jsonwebtoken';
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
 const router = express.Router();
-require("dotenv").config();
+
+// Create nodemailer transporter
+const transporter = nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS
+    }
+});
 
 // --- Setup ---
 // Ensure the 'uploads' directory exists
@@ -37,16 +52,12 @@ const upload = multer({
 ]);
 
 // --- Registration Route ---
-// POST /api/auth/register
 router.post('/register', upload, async (req, res) => {
-    // Note: The `upload` middleware now handles the initial processing.
-    // We can directly access req.body and req.files.
     try {
         const { fullName, email, phone, collegeName, collegeID } = req.body;
         const profilePic = req.files?.profilePic?.[0];
         const idCard = req.files?.idCard?.[0];
 
-        // --- Input Validation ---
         if (!fullName || !email || !phone || !collegeName || !collegeID) {
             return res.status(400).json({ error: 'All fields are required.' });
         }
@@ -56,20 +67,11 @@ router.post('/register', upload, async (req, res) => {
         if (!idCard) {
             return res.status(400).json({ error: 'College ID card is required.' });
         }
-        if (profilePic.size < 51200 || profilePic.size > 256000) {
-            return res.status(400).json({ error: 'Profile Picture must be between 50KB and 250KB.' });
-        }
-        if (idCard.size < 102400 || idCard.size > 512000) {
-            return res.status(400).json({ error: 'College ID Card must be between 100KB and 500KB.' });
-        }
 
-        // --- Database Logic (using modern async/await) ---
         // Check if user already exists
-        const checkUserSql = 'SELECT email FROM users WHERE email = ?';
-        const [existingUsers] = await db.query(checkUserSql, [email]);
+        const [existingUsers] = await db.query('SELECT email FROM users WHERE email = ?', [email]);
 
         if (existingUsers.length > 0) {
-            console.log('Registration attempt with existing email:', email);
             return res.status(409).json({ error: 'An account with this email already exists.' });
         }
 
@@ -77,52 +79,51 @@ router.post('/register', upload, async (req, res) => {
         const randomPassword = crypto.randomBytes(4).toString('hex');
         const hashedPassword = await bcrypt.hash(randomPassword, 10);
 
-        // Insert new user into the database
-        const insertSql = `
-            INSERT INTO users (full_name, email, password, phone, college_name, college_id, profile_pic, id_card, created_at) 
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())
-        `;
-        const values = [fullName, email, hashedPassword, phone, collegeName, collegeID, profilePic.filename, idCard.filename];
-        await db.query(insertSql, values);
+        // Insert new user
+        const [result] = await db.query(
+            'INSERT INTO users (full_name, email, password, phone, college_name, college_id, profile_pic, id_card, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())',
+            [fullName, email, hashedPassword, phone, collegeName, collegeID, profilePic.filename, idCard.filename]
+        );
 
-        // --- Email Logic ---
-        const transporter = nodemailer.createTransport({
-            service: 'gmail', // Using service is often easier than host/port
-            auth: {
-                user: process.env.EMAIL_USER,
-                pass: process.env.EMAIL_PASS,
-            },
-        });
-
-        const mailOptions = {
-            from: `"nDMatrix Team" <${process.env.EMAIL_USER}>`,
-            to: email,
-            subject: 'Registration Successful - Your Password',
-            html: `
-                <p>Dear ${fullName},</p>
-                <p>You have successfully registered for the test portal.</p>
-                <p><strong>Your one-time password is:</strong> <h1>${randomPassword}</h1></p>
-                <p>Please use this password to <a href="http://localhost:5173/login">Login here</a> and change your password immediately.</p>
-                <br>
-                <p>Best Regards,<br/>The nDMatrix Team</p>
-            `,
-        };
-
-        await transporter.sendMail(mailOptions);
-        console.log('Registration email sent successfully to:', email);
-
-        res.status(201).json({ message: 'Registration successful. Please check your email for the password.' });
-
+        // Try to send email, but don't fail registration if email fails
+        try {
+            if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
+                await transporter.sendMail({
+                    from: `"nDMatrix Team" <${process.env.EMAIL_USER}>`,
+                    to: email,
+                    subject: 'Registration Successful - Your Password',
+                    html: `
+                        <p>Dear ${fullName},</p>
+                        <p>You have successfully registered for the test portal.</p>
+                        <p><strong>Your one-time password is:</strong> <h1>${randomPassword}</h1></p>
+                        <p>Please use this password to <a href="http://localhost:5173/login">Login here</a> and change your password immediately.</p>
+                        <br>
+                        <p>Best Regards,<br/>The nDMatrix Team</p>
+                    `,
+                });
+                res.status(201).json({ message: 'Registration successful. Please check your email for the password.' });
+            } else {
+                // Email configuration missing, but registration succeeded
+                res.status(201).json({ 
+                    message: `Registration successful! Your temporary password is: ${randomPassword}. Please save this password and change it after login.`,
+                    password: randomPassword // Include password in response for development
+                });
+            }
+        } catch (emailError) {
+            console.error('Email sending failed:', emailError);
+            // Registration succeeded but email failed
+            res.status(201).json({ 
+                message: `Registration successful! Your temporary password is: ${randomPassword}. Please save this password and change it after login.`,
+                password: randomPassword // Include password in response for development
+            });
+        }
     } catch (error) {
-        // This single catch block handles errors from file upload, database, or email.
         console.error('REGISTRATION_ERROR:', error);
-        res.status(500).json({ error: 'An internal server error occurred. Please try again later.' });
+        res.status(500).json({ error: 'An internal server error occurred.' });
     }
 });
 
-
 // --- Login Route ---
-// POST /api/auth/login
 router.post('/login', async (req, res) => {
     try {
         const { email, password } = req.body;
@@ -130,45 +131,136 @@ router.post('/login', async (req, res) => {
         if (!email || !password) {
             return res.status(400).json({ error: 'Email and password are required.' });
         }
-        
-        // --- Database Logic (using modern async/await) ---
-        const findUserSql = 'SELECT * FROM users WHERE email = ?';
-        const [users] = await db.query(findUserSql, [email]);
 
-        // Check if user exists
+        const [users] = await db.query('SELECT * FROM users WHERE email = ?', [email]);
+
         if (users.length === 0) {
-            console.log('Login failed: User not found for email:', email);
-            return res.status(401).json({ error: 'Invalid credentials.' }); // Generic error
+            return res.status(401).json({ error: 'Invalid credentials.' });
         }
 
         const user = users[0];
-
-        // Compare password with the hashed password in the database
         const isMatch = await bcrypt.compare(password, user.password);
 
         if (!isMatch) {
-            console.log('Login failed: Password mismatch for email:', email);
-            return res.status(401).json({ error: 'Invalid credentials.' }); // Generic error
+            return res.status(401).json({ error: 'Invalid credentials.' });
         }
 
-        console.log('Login successful for:', email);
-
-        // Send a successful response with user data
         res.status(200).json({
             message: 'Login successful',
             user: {
                 id: user.id,
                 email: user.email,
                 fullName: user.full_name,
-                // The frontend should construct the full URL
                 profilePic: user.profile_pic,
             },
         });
-
     } catch (error) {
         console.error('LOGIN_ERROR:', error);
         res.status(500).json({ error: 'An internal server error occurred.' });
     }
 });
 
-module.exports = router;
+// --- User Profile Route ---
+router.get('/user/:id/profile', async (req, res) => {
+    try {
+        const userId = req.params.id;
+        const [rows] = await db.query(
+            'SELECT id, full_name, email, phone, college_name, college_id, profile_pic, id_card, created_at FROM users WHERE id = ?',
+            [userId]
+        );
+
+        if (rows.length === 0) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        const user = rows[0];
+        res.json({
+            id: user.id,
+            full_name: user.full_name,
+            email: user.email,
+            phone: user.phone,
+            college_name: user.college_name,
+            college_id: user.college_id,
+            profile_pic: user.profile_pic,
+            id_card: user.id_card,
+            created_at: user.created_at
+        });
+    } catch (error) {
+        console.error('Error fetching user profile:', error);
+        res.status(500).json({ message: 'Error fetching user profile' });
+    }
+});
+
+// --- Forgot Password Route (send new password directly) ---
+router.post('/forgot-password', async (req, res) => {
+    try {
+        const { email } = req.body;
+        if (!email) return res.status(400).json({ message: 'Email is required.' });
+        // Check if user exists
+        const [users] = await db.query('SELECT id, full_name FROM users WHERE email = ?', [email]);
+        if (users.length === 0) {
+            return res.status(404).json({ message: 'No user found with that email.' });
+        }
+        const user = users[0];
+        // Generate new random password
+        const newPassword = crypto.randomBytes(4).toString('hex');
+        const hashedPassword = await bcrypt.hash(newPassword, 10);
+        // Update password in database
+        await db.query('UPDATE users SET password = ? WHERE id = ?', [hashedPassword, user.id]);
+        // Try to send new password via email
+        try {
+            if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
+                await transporter.sendMail({
+                    from: `"nDMatrix Team" <${process.env.EMAIL_USER}>`,
+                    to: email,
+                    subject: 'Your New Password',
+                    html: `<p>Dear ${user.full_name},</p>
+                           <p>Your password has been reset. Here is your new password:</p>
+                           <h2>${newPassword}</h2>
+                           <p>Please log in and change your password immediately.</p>
+                           <p>If you did not request this, please contact support.</p>`
+                });
+                res.json({ message: 'A new password has been sent to your email.' });
+            } else {
+                // Email configuration missing, but password reset succeeded
+                res.json({ 
+                    message: `Password reset successful! Your new password is: ${newPassword}. Please save this password and change it after login.`,
+                    password: newPassword // Include password in response for development
+                });
+            }
+        } catch (emailError) {
+            console.error('Email sending failed:', emailError);
+            // Password reset succeeded but email failed
+            res.json({ 
+                message: `Password reset successful! Your new password is: ${newPassword}. Please save this password and change it after login.`,
+                password: newPassword // Include password in response for development
+            });
+        }
+    } catch (error) {
+        console.error('FORGOT_PASSWORD_ERROR:', error);
+        res.status(500).json({ message: 'Failed to send new password. Please try again.' });
+    }
+});
+
+// --- Reset Password Route ---
+router.post('/reset-password', async (req, res) => {
+    try {
+        const { token, newPassword } = req.body;
+        if (!token || !newPassword) return res.status(400).json({ message: 'Token and new password are required.' });
+        // Find user with valid token
+        const [users] = await db.query('SELECT id FROM users WHERE reset_token = ? AND reset_token_expiry > NOW()', [token]);
+        if (users.length === 0) {
+            return res.status(400).json({ message: 'Invalid or expired reset token.' });
+        }
+        const userId = users[0].id;
+        const hashedPassword = await bcrypt.hash(newPassword, 10);
+        // Update password and clear token fields
+        await db.query('UPDATE users SET password = ?, reset_token = NULL, reset_token_expiry = NULL WHERE id = ?', [hashedPassword, userId]);
+        res.json({ message: 'Password reset successful. You can now log in with your new password.' });
+    } catch (error) {
+        console.error('RESET_PASSWORD_ERROR:', error);
+        res.status(500).json({ message: 'Failed to reset password. Please try again.' });
+    }
+});
+
+export default router;

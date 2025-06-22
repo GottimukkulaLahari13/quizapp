@@ -1,7 +1,8 @@
 // backend/routes/questions.js
-const express = require('express');
+import express from 'express';
+import db from '../db.js'; // adjust if path is different
+
 const router = express.Router();
-const db = require('../db'); // adjust if path is different
 
 // GET /api/questions
 // Fetches all questions (MCQ/NAT) excluding correct answers
@@ -49,4 +50,4 @@ router.get('/questions', async (req, res) => {
   }
 });
 
-module.exports = router;
+export default router;

@@ -10,12 +10,15 @@ import Instructions from "./pages/Instructions.jsx";
 import ReportPage from "./pages/ReportPage.jsx";
 import SolutionsPage from "./pages/SolutionsPage.jsx";
 import PerformanceReport from "./pages/PerformanceReport.jsx";
-import AdminLogin from "./pages/AdminLogin.jsx"; // <--- Import your AdminLogin component
+import AdminLogin from "./pages/AdminLogin.jsx"; 
+import AdminDashboard from "./pages/AdminDashboard.jsx"; 
+import HomePage from "./pages/HomePage.jsx";
 
 const App = () => {
   return (
     <Routes>
-      <Route path="/" element={<Register />} />
+      <Route path="/" element={<HomePage />} />
+      <Route path="/register" element={<Register />} />
       <Route path="/login" element={<Login />} />
       <Route path="/dashboard" element={<Dashboard />} />
       <Route path="/instructions/:testId" element={<Instructions />} />
@@ -25,7 +28,8 @@ const App = () => {
       <Route path="/solutions/:testId" element={<SolutionsPage />} />
 
       {/* NEW: Admin Login Route */}
-      <Route path="/admin/login" element={<AdminLogin />} /> {/* <--- Add this line */}
+      <Route path="/admin/login" element={<AdminLogin />} /> 
+      <Route path="/admin/dashboard" element={<AdminDashboard />} /> 
     </Routes>
   );
 };

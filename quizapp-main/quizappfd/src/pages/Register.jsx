@@ -13,6 +13,7 @@ const Register = () => {
   });
 
   const [message, setMessage] = useState("");
+  const [messageType, setMessageType] = useState(""); // "success" or "error"
 
   const handleChange = (e) => {
     const { name, value, files } = e.target;
@@ -28,16 +29,19 @@ const Register = () => {
 
     if (!formData.profilePic || !formData.idCard) {
       setMessage("Please upload both profile picture and college ID card.");
+      setMessageType("error");
       return;
     }
 
     if (formData.profilePic.size < 51200 || formData.profilePic.size > 256000) {
       setMessage("Profile Picture must be between 50KB and 250KB.");
+      setMessageType("error");
       return;
     }
 
     if (formData.idCard.size < 102400 || formData.idCard.size > 512000) {
       setMessage("College ID Card must be between 100KB and 500KB.");
+      setMessageType("error");
       return;
     }
 
@@ -57,9 +61,15 @@ const Register = () => {
         },
       });
 
-      setMessage(response.data.message || "Registration successful! Check your email.");
+      setMessageType("success");
+      if (response.data.password) {
+        setMessage(`Registration successful! Your temporary password is: ${response.data.password}. Please save this password and use it to login.`);
+      } else {
+        setMessage(response.data.message || "Registration successful! Check your email for the password.");
+      }
     } catch (err) {
       console.error("Axios Error:", err);
+      setMessageType("error");
       setMessage(err.response?.data?.error || "Registration failed.");
     }
   };
@@ -134,7 +144,7 @@ const Register = () => {
 
         <button type="submit" className="auth-button">Register</button>
 
-        {message && <p style={{ color: "green", marginTop: "10px" }}>{message}</p>}
+        {message && <p style={{ color: messageType === "success" ? "green" : "red", marginTop: "10px" }}>{message}</p>}
 
         <p style={{ marginTop: "20px", textAlign: "center" }}>
           Already have an account?{" "}
